@@ -11,7 +11,8 @@ export default function ProfileDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { isDark } = useTheme();
-  
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const theme = {
     text: '#f0f0f0',
@@ -47,6 +48,29 @@ export default function ProfileDetail() {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), 'MMMM d, yyyy');
+    } catch {
+      return dateString;
+    }
+  };
+
+  const handlePhonePress = (phone: string) => {
+    Alert.alert(
+      'Call',
+      `Would you like to call ${phone}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Call', onPress: () => Linking.openURL(`tel:${phone}`) }
+      ]
+    );
+  };
+
   const getRelationshipIcon = (relationship: string) => {
     switch (relationship) {
       case 'family':
@@ -68,6 +92,15 @@ export default function ProfileDetail() {
         return isDark ? '#7F1D1D' : '#FEE2E2';
       case 'partner':
         return isDark ? '#831843' : '#FCE7F3';
+      case 'friend':
+        return isDark ? '#1E3A8A' : '#DBEAFE';
+      case 'coworker':
+        return isDark ? '#064E3B' : '#D1FAE5';
+      default:
+        return isDark ? '#374151' : '#F3F4F6';
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -310,6 +343,33 @@ export default function ProfileDetail() {
                 <User size={20} color="#1DA1F2" style={styles.infoIcon} />
                 <View style={styles.infoContent}>
                   <Text style={[styles.infoLabel, { color: theme.primary }]}>X (Twitter):</Text>
+                  <Text style={[styles.infoText, { color: theme.text }]}>{profile.twitter}</Text>
+                </View>
+              </View>
+            )}
+            
+            {profile.tiktok && (
+              <View style={styles.infoItem}>
+                <User size={20} color="#000000" style={styles.infoIcon} />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: theme.primary }]}>TikTok:</Text>
+                  <Text style={[styles.infoText, { color: theme.text }]}>{profile.tiktok}</Text>
+                </View>
+              </View>
+            )}
+            
+            {profile.facebook && (
+              <View style={styles.infoItem}>
+                <User size={20} color="#1877F2" style={styles.infoIcon} />
+                <View style={styles.infoContent}>
+                  <Text style={[styles.infoLabel, { color: theme.primary }]}>Facebook:</Text>
+                  <Text style={[styles.infoText, { color: theme.text }]}>{profile.facebook}</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -374,6 +434,49 @@ const styles = StyleSheet.create({
   relationshipBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  relationshipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  age: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  section: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  infoIcon: {
+    marginRight: 12,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  infoText: {
+    fontSize: 16,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
