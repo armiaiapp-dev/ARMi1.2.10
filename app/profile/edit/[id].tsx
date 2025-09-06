@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { Platform, ActionSheetIOS, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,13 +9,12 @@ import {
   TouchableOpacity, 
   TextInput, 
   SafeAreaView,
-  Modal,
   Image
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Save, Plus, X, User, Palette, Calendar, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Save, Plus, X, User, Palette } from 'lucide-react-native';
 import { Heart, Briefcase, House } from 'lucide-react-native';
-import { Camera, Image as ImageIcon } from 'lucide-react-native';
+import { Camera } from 'lucide-react-native';
 import { DatabaseService } from '../../../services/DatabaseService';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -39,36 +38,60 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 export default function EditProfile() {
-  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { isDark } = useTheme();
   
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState({
+    name: '',
+    age: null,
+    phone: '',
+    email: '',
+    relationship: 'friend',
+    job: '',
+    notes: '',
+    tags: [],
+    parents: [],
+    kids: [],
+    brothers: [],
+    sisters: [],
+    siblings: [],
+    foodLikes: [],
+    foodDislikes: [],
+    interests: [],
+    instagram: '',
+    snapchat: '',
+    twitter: '',
+    tiktok: '',
+    facebook: '',
+    birthday: '',
+    lastContactDate: null,
+    // Text fields for editing
+    parentsText: '',
+    kidsText: '',
+    brothersText: '',
+    sistersText: '',
+    siblingsText: '',
+    likesText: '',
+    dislikesText: '',
+    interestsText: '',
+  });
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [selectedTagColor, setSelectedTagColor] = useState(TAG_COLORS[0]);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [customColorName, setCustomColorName] = useState('');
-  const [customColorLight, setCustomColorLight] = useState('#E5E7EB');
-  const [customColorDark, setCustomColorDark] = useState('#374151');
-  const [customColorText, setCustomColorText] = useState('#6B7280');
-  const [showCustomColorForm, setShowCustomColorForm] = useState(false);
-  const [showLastContactCalendar, setShowLastContactCalendar] = useState(false);
-  const [lastContactCalendarDate, setLastContactCalendarDate] = useState(new Date());
   const [selectedImage, setSelectedImage] = useState(null);
-  const [showBirthdayCalendar, setShowBirthdayCalendar] = useState(false);
-  const [birthdayCalendarDate, setBirthdayCalendarDate] = useState(new Date());
 
   const theme = {
     text: '#f0f0f0',
     background: isDark ? '#0B0909' : '#003C24',
-    primary: isDark ? '#8C8C8C' : '#8C8C8C',
+    primary: '#f0f0f0',
     secondary: isDark ? '#4A5568' : '#012d1c',
-    accent: isDark ? '#44444C' : '#f0f0f0',
+    accent: isDark ? '#44444C' : '#002818',
     cardBackground: isDark ? '#1A1A1A' : '#002818',
     border: isDark ? '#333333' : '#012d1c',
-    inputText: isDark ? '#f0f0f0' : '#003C24',
     isDark,
   };
 
@@ -83,34 +106,25 @@ export default function EditProfile() {
         if (profileData) {
           setProfile({
             ...profileData,
-            tags: profileData.tags || [],
-            interests: profileData.interests || [],
-            pets: profileData.pets || [],
-            // Initialize text fields for editing
-            parentsText: profileData.parents ? profileData.parents.join(', ') : '',
-            kidsText: profileData.kids ? profileData.kids.join(', ') : '',
-            brothersText: profileData.brothers ? profileData.brothers.join(', ') : '',
-            sistersText: profileData.sisters ? profileData.sisters.join(', ') : '',
-            siblingsText: profileData.siblings ? profileData.siblings.join(', ') : '',
-            likesText: profileData.likes ? profileData.likes.join(', ') : '',
-            dislikesText: profileData.dislikes ? profileData.dislikes.join(', ') : '',
-            interestsText: profileData.interests ? profileData.interests.join(', ') : '',
+            // Convert arrays back to text for editing
+            parentsText: profileData.parents?.join(', ') || '',
+            kidsText: profileData.kids?.join(', ') || '',
+            brothersText: profileData.brothers?.join(', ') || '',
+            sistersText: profileData.sisters?.join(', ') || '',
+            siblingsText: profileData.siblings?.join(', ') || '',
+            likesText: profileData.foodLikes?.join(', ') || '',
+            dislikesText: profileData.foodDislikes?.join(', ') || '',
+            interestsText: profileData.interests?.join(', ') || '',
           });
           
-          // Set selected image if profile has a photo
+          // Set selected image if profile has photo
           if (profileData.photoUri) {
             setSelectedImage({ uri: profileData.photoUri });
-          }
-          
-          // Set birthday calendar date if birthday exists
-          if (profileData.birthday) {
-            setBirthdayCalendarDate(new Date(profileData.birthday));
           }
         }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-      Alert.alert('Error', 'Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -124,13 +138,18 @@ export default function EditProfile() {
 
     setSaving(true);
     try {
-      await DatabaseService.createOrUpdateProfile(profile);
+      const profileData = {
+        ...profile,
+        id: parseInt(id),
+      };
+      
+      await DatabaseService.createOrUpdateProfile(profileData);
       Alert.alert('Success', 'Profile updated successfully', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error) {
       console.error('Error saving profile:', error);
-      Alert.alert('Error', 'Failed to save profile');
+      Alert.alert('Error', 'Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -152,33 +171,18 @@ export default function EditProfile() {
     setNewTag('');
   };
 
-  const addCustomColor = () => {
-    if (!customColorName.trim()) return;
-    
-    const customColor = {
-      name: customColorName.trim(),
-      light: customColorLight,
-      dark: customColorDark,
-      text: customColorText,
-    };
-    
-    // Add to available colors (temporarily for this session)
-    TAG_COLORS.push(customColor);
-    setSelectedTagColor(customColor);
-    
-    // Reset form
-    setCustomColorName('');
-    setCustomColorLight('#E5E7EB');
-    setCustomColorDark('#374151');
-    setCustomColorText('#6B7280');
-    setShowCustomColorForm(false);
-    setShowColorPicker(false);
+  const removeTag = (index) => {
+    setProfile(prev => ({
+      ...prev,
+      tags: prev.tags.filter((_, i) => i !== index)
+    }));
   };
 
-  const navigateLastContactMonth = (direction: number) => {
-    const newDate = new Date(lastContactCalendarDate);
-    newDate.setMonth(newDate.getMonth() + direction);
-    setLastContactCalendarDate(newDate);
+  const updateField = (field, value) => {
+    setProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleAddPhoto = async () => {
@@ -205,7 +209,6 @@ export default function EditProfile() {
                 });
                 if (!result.canceled && result.assets?.[0]) {
                   const asset = result.assets[0];
-                  // existing state updates for EDIT screen:
                   setSelectedImage(asset);
                   updateField('photoUri', asset.uri);
                 }
@@ -225,7 +228,6 @@ export default function EditProfile() {
                 });
                 if (!result.canceled && result.assets?.[0]) {
                   const asset = result.assets[0];
-                  // existing state updates for EDIT screen:
                   setSelectedImage(asset);
                   updateField('photoUri', asset.uri);
                 }
@@ -291,77 +293,69 @@ export default function EditProfile() {
     updateField('photoUri', null);
   };
 
-  const generateLastContactCalendarDays = () => {
-    const year = lastContactCalendarDate.getFullYear();
-    const month = lastContactCalendarDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const handleBirthdayInputChange = (text: string) => {
+    // Allow user to type freely
+    updateField('birthday', text);
     
-    const days = [];
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      days.push(date);
+    // Only validate when they've entered exactly 10 characters (MM/DD/YYYY)
+    if (text.length === 10) {
+      const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+      
+      if (!dateRegex.test(text)) {
+        Alert.alert(
+          'Invalid Date Format',
+          'Please use MM/DD/YYYY format (e.g., 03/15/1990)',
+          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+        );
+        return;
+      }
+      
+      // Parse the date
+      const [month, day, year] = text.split('/').map(num => parseInt(num));
+      const inputDate = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+      
+      // Check if date is valid (handles invalid dates like 02/30/2000)
+      if (inputDate.getMonth() !== month - 1 || inputDate.getDate() !== day || inputDate.getFullYear() !== year) {
+        Alert.alert(
+          'Invalid Date',
+          'Please enter a valid date (e.g., 03/15/1990)',
+          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+        );
+        return;
+      }
+      
+      // Check if date is in the future
+      if (inputDate > today) {
+        Alert.alert(
+          'Invalid Birthday',
+          'Birthday cannot be in the future. Please enter a past date.',
+          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+        );
+        return;
+      }
     }
-    return days;
   };
 
-  const selectLastContactDate = (date: Date) => {
-    updateField('lastContactDate', date.toISOString());
-    setShowLastContactCalendar(false);
-  };
-
-  const navigateBirthdayMonth = (direction: number) => {
-    const newDate = new Date(birthdayCalendarDate);
-    newDate.setMonth(newDate.getMonth() + direction);
-    setBirthdayCalendarDate(newDate);
-  };
-
-  const selectBirthdayDate = (date: Date) => {
-    updateField('birthday', date.toISOString());
-    setShowBirthdayCalendar(false);
-  };
-
-  const generateBirthdayCalendarDays = () => {
-    const year = birthdayCalendarDate.getFullYear();
-    const month = birthdayCalendarDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const formatBirthdayForDisplay = () => {
+    if (!profile.birthday) return '';
     
-    const days = [];
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      days.push(date);
+    // If it's already in MM/DD/YYYY format, return as is
+    if (profile.birthday.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      return profile.birthday;
     }
-    return days;
-  };
-
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
-
-  const removeTag = (index) => {
-    setProfile(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateField = (field, value) => {
-    setProfile(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    
+    // If it's in ISO format, convert to MM/DD/YYYY
+    try {
+      const date = new Date(profile.birthday);
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`;
+    } catch {
+      return profile.birthday;
+    }
   };
 
   if (loading) {
@@ -369,22 +363,6 @@ export default function EditProfile() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.primary }]}>Loading profile...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Edit Profile</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: theme.primary }]}>Profile not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -406,30 +384,23 @@ export default function EditProfile() {
         </TouchableOpacity>
       </View>
 
-      <>
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Basic Info */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Basic Information</Text>
           
           {/* Profile Photo */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Profile Photo</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Profile Photo</Text>
             <View style={styles.photoContainer}>
               {selectedImage ? (
                 <View style={styles.photoPreview}>
                   <Image source={{ uri: selectedImage.uri }} style={styles.profilePhoto} />
                   <TouchableOpacity
-                    style={[styles.removePhotoButton, { backgroundColor: '#EF4444' }]}
+                    style={[styles.replacePhotoButton, { backgroundColor: isDark ? theme.secondary : '#015A3A' }]}
                     onPress={handleRemovePhoto}
                   >
                     <X size={16} color="#FFFFFF" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.replacePhotoButton, { backgroundColor: isDark ? theme.secondary : '#015A3A' }]}
-                    onPress={handleAddPhoto}
-                  >
-                    <Camera size={16} color="#FFFFFF" />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -445,9 +416,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Name *</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Name *</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.name || ''}
               onChangeText={(text) => updateField('name', text)}
               placeholder="Enter name"
@@ -456,9 +427,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Age</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Age</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.age?.toString() || ''}
               onChangeText={(text) => updateField('age', text ? parseInt(text) || null : null)}
               placeholder="Enter age"
@@ -468,27 +439,20 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Birthday</Text>
-            <TouchableOpacity
-              style={[styles.dateSelector, { backgroundColor: theme.accent, borderColor: theme.border }]}
-              onPress={() => {
-                // Set calendar to current birthday date or today
-                const currentDate = profile.birthday ? new Date(profile.birthday) : new Date();
-                setBirthdayCalendarDate(currentDate);
-                setShowBirthdayCalendar(true);
-              }}
-            >
-              <Calendar size={20} color={theme.primary} />
-              <Text style={[styles.dateSelectorText, { color: theme.text }]}>
-                {profile.birthday 
-                  ? formatDisplayDate(profile.birthday.split('T')[0])
-                  : 'Select Birthday'
-                }
-              </Text>
-            </TouchableOpacity>
+            <Text style={[styles.label, { color: theme.text }]}>Birthday</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
+              value={formatBirthdayForDisplay()}
+              onChangeText={handleBirthdayInputChange}
+              placeholder="MM/DD/YYYY (e.g., 03/15/1990)"
+              placeholderTextColor={theme.primary}
+              keyboardType="numeric"
+              maxLength={10}
+            />
           </View>
+
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Relationship</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Relationship</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.relationshipOptions}>
               {RELATIONSHIP_OPTIONS.map((option) => {
                 return (
@@ -522,9 +486,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Job</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Job</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.job || ''}
               onChangeText={(text) => updateField('job', text)}
               placeholder="Enter job/occupation"
@@ -538,9 +502,9 @@ export default function EditProfile() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Contact Information</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Phone</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Phone</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.phone || ''}
               onChangeText={(text) => updateField('phone', text)}
               placeholder="Enter phone number"
@@ -550,9 +514,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Email</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Email</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.email || ''}
               onChangeText={(text) => updateField('email', text)}
               placeholder="Enter email address"
@@ -568,9 +532,9 @@ export default function EditProfile() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Family</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Parents</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Parents</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.parentsText || ''}
               onChangeText={(text) => {
                 updateField('parentsText', text);
@@ -582,9 +546,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Children</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Children</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.kidsText || ''}
               onChangeText={(text) => {
                 updateField('kidsText', text);
@@ -596,9 +560,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Brothers</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Brothers</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.brothersText || ''}
               onChangeText={(text) => {
                 updateField('brothersText', text);
@@ -610,9 +574,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Sisters</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Sisters</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.sistersText || ''}
               onChangeText={(text) => {
                 updateField('sistersText', text);
@@ -624,9 +588,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Other Siblings</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Other Siblings</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.siblingsText || ''}
               onChangeText={(text) => {
                 updateField('siblingsText', text);
@@ -643,12 +607,12 @@ export default function EditProfile() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Preferences</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Likes</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Likes</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
-              value={profile.foodLikesText || ''}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
+              value={profile.likesText || ''}
               onChangeText={(text) => {
-                updateField('foodLikesText', text);
+                updateField('likesText', text);
                 updateField('foodLikes', text ? text.split(',').map(l => l.trim()).filter(l => l) : []);
               }}
               placeholder="e.g. pizza, hiking, movies, reading"
@@ -657,12 +621,12 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Dislikes</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Dislikes</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
-              value={profile.foodDislikesText || ''}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
+              value={profile.dislikesText || ''}
               onChangeText={(text) => {
-                updateField('foodDislikesText', text);
+                updateField('dislikesText', text);
                 updateField('foodDislikes', text ? text.split(',').map(d => d.trim()).filter(d => d) : []);
               }}
               placeholder="e.g. spicy food, loud music, crowds"
@@ -671,9 +635,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Interests</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Interests</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.interestsText || ''}
               onChangeText={(text) => {
                 updateField('interestsText', text);
@@ -690,9 +654,9 @@ export default function EditProfile() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Socials</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Instagram</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Instagram</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.instagram || ''}
               onChangeText={(text) => updateField('instagram', text)}
               placeholder="@username or profile link"
@@ -701,9 +665,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Snapchat</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Snapchat</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.snapchat || ''}
               onChangeText={(text) => updateField('snapchat', text)}
               placeholder="@username"
@@ -712,9 +676,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>X (Twitter)</Text>
+            <Text style={[styles.label, { color: theme.text }]}>X (Twitter)</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.twitter || ''}
               onChangeText={(text) => updateField('twitter', text)}
               placeholder="@username"
@@ -723,9 +687,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>TikTok</Text>
+            <Text style={[styles.label, { color: theme.text }]}>TikTok</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.tiktok || ''}
               onChangeText={(text) => updateField('tiktok', text)}
               placeholder="@username"
@@ -734,9 +698,9 @@ export default function EditProfile() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Facebook</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Facebook</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={profile.facebook || ''}
               onChangeText={(text) => updateField('facebook', text)}
               placeholder="Profile name or link"
@@ -777,7 +741,7 @@ export default function EditProfile() {
           {/* Add New Tag */}
           <View style={styles.addTagContainer}>
             <TextInput
-              style={[styles.tagInput, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+              style={[styles.tagInput, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
               value={newTag}
               onChangeText={setNewTag}
               placeholder="Add a tag..."
@@ -816,95 +780,6 @@ export default function EditProfile() {
                   }}
                 />
               ))}
-              
-              {/* Add Custom Color Button */}
-              <TouchableOpacity
-                style={[styles.addCustomColorButton, { borderColor: theme.border }]}
-                onPress={() => setShowCustomColorForm(true)}
-              >
-                <Plus size={16} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Custom Color Form */}
-          {showCustomColorForm && (
-            <View style={[styles.customColorForm, { backgroundColor: theme.accent, borderColor: theme.border }]}>
-              <Text style={[styles.customColorTitle, { color: theme.text }]}>Create Custom Color</Text>
-              
-              <View style={styles.customColorInputs}>
-                <TextInput
-                  style={[styles.customColorInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
-                  value={customColorName}
-                  onChangeText={setCustomColorName}
-                  placeholder="Color name"
-                  placeholderTextColor={theme.primary}
-                />
-                
-                <View style={styles.colorInputRow}>
-                  <View style={styles.colorInputGroup}>
-                    <Text style={[styles.colorInputLabel, { color: theme.primary }]}>Light</Text>
-                    <TextInput
-                      style={[styles.colorInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
-                      value={customColorLight}
-                      onChangeText={setCustomColorLight}
-                      placeholder="#E5E7EB"
-                      placeholderTextColor={theme.primary}
-                    />
-                  </View>
-                  
-                  <View style={styles.colorInputGroup}>
-                    <Text style={[styles.colorInputLabel, { color: theme.primary }]}>Dark</Text>
-                    <TextInput
-                      style={[styles.colorInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
-                      value={customColorDark}
-                      onChangeText={setCustomColorDark}
-                      placeholder="#374151"
-                      placeholderTextColor={theme.primary}
-                    />
-                  </View>
-                  
-                  <View style={styles.colorInputGroup}>
-                    <Text style={[styles.colorInputLabel, { color: theme.primary }]}>Text</Text>
-                    <TextInput
-                      style={[styles.colorInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
-                      value={customColorText}
-                      onChangeText={setCustomColorText}
-                      placeholder="#6B7280"
-                      placeholderTextColor={theme.primary}
-                    />
-                  </View>
-                </View>
-                
-                {/* Color Preview */}
-                <View style={styles.colorPreview}>
-                  <Text style={[styles.colorPreviewLabel, { color: theme.primary }]}>Preview:</Text>
-                  <View style={[
-                    styles.colorPreviewSwatch,
-                    { backgroundColor: isDark ? customColorDark : customColorLight }
-                  ]}>
-                    <Text style={[styles.colorPreviewText, { color: customColorText }]}>
-                      Sample Text
-                    </Text>
-                  </View>
-                </View>
-                
-                <View style={styles.customColorActions}>
-                  <TouchableOpacity
-                    style={[styles.customColorButton, { backgroundColor: theme.border }]}
-                    onPress={() => setShowCustomColorForm(false)}
-                  >
-                    <Text style={[styles.customColorButtonText, { color: isDark ? theme.text : '#003C24' }]}>Cancel</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.customColorButton, { backgroundColor: theme.secondary }]}
-                    onPress={addCustomColor}
-                  >
-                    <Text style={[styles.customColorButtonText, { color: '#FFFFFF' }]}>Add Color</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
             </View>
           )}
         </View>
@@ -913,7 +788,7 @@ export default function EditProfile() {
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Other Notes</Text>
           <TextInput
-            style={[styles.textArea, { backgroundColor: theme.accent, color: theme.inputText, borderColor: theme.border }]}
+            style={[styles.textArea, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
             value={profile.notes || ''}
             onChangeText={(text) => updateField('notes', text)}
             placeholder="Add notes about this person..."
@@ -922,205 +797,22 @@ export default function EditProfile() {
             numberOfLines={4}
           />
         </View>
-
-        {/* Last Contact */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Last Contact</Text>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.primary }]}>Date</Text>
-            <TouchableOpacity
-              style={[styles.dateSelector, { backgroundColor: theme.accent, borderColor: theme.border }]}
-              onPress={() => {
-                // Set calendar to current last contact date or today
-                const currentDate = profile.lastContactDate ? new Date(profile.lastContactDate) : new Date();
-                setLastContactCalendarDate(currentDate);
-                setShowLastContactCalendar(true);
-              }}
-            >
-              <Calendar size={20} color={theme.primary} />
-              <Text style={[styles.dateSelectorText, { color: theme.text }]}>
-                {profile.lastContactDate 
-                  ? formatDisplayDate(profile.lastContactDate.split('T')[0])
-                  : 'Select Date'
-                }
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        </ScrollView>
-
-        {/* Last Contact Calendar Modal */}
-        <Modal
-        visible={showLastContactCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowLastContactCalendar(false)}
-      >
-        <View style={styles.calendarOverlay}>
-          <View style={[styles.calendarModal, { backgroundColor: theme.cardBackground }]}>
-            <View style={[styles.calendarHeader, { borderBottomColor: theme.border }]}>
-              <TouchableOpacity onPress={() => navigateLastContactMonth(-1)}>
-                <ChevronLeft size={24} color={theme.primary} />
-              </TouchableOpacity>
-              <Text style={[styles.calendarTitle, { color: theme.text }]}>
-                {lastContactCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </Text>
-              <TouchableOpacity onPress={() => navigateLastContactMonth(1)}>
-                <ChevronRight size={24} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calendarContent}>
-              <View style={styles.weekDays}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <Text key={day} style={[styles.weekDayText, { color: theme.primary }]}>
-                    {day}
-                  </Text>
-                ))}
-              </View>
-
-              <View style={styles.calendarGrid}>
-                {generateLastContactCalendarDays().map((date, index) => {
-                  const isCurrentMonth = date.getMonth() === lastContactCalendarDate.getMonth();
-                  const isSelected = profile.lastContactDate && 
-                    date.toISOString().split('T')[0] === profile.lastContactDate.split('T')[0];
-                  const isToday = date.toDateString() === new Date().toDateString();
-
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.calendarDay,
-                        isSelected && { backgroundColor: theme.secondary },
-                        isToday && !isSelected && { borderColor: theme.secondary, borderWidth: 1 }
-                      ]}
-                      onPress={() => selectLastContactDate(date)}
-                    >
-                      <Text style={[
-                        styles.calendarDayText,
-                        { color: isCurrentMonth ? theme.text : theme.primary },
-                        isSelected && { color: '#FFFFFF' }
-                      ]}>
-                        {date.getDate()}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={styles.calendarFooter}>
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.accent, borderColor: theme.border }]}
-                  onPress={() => setShowLastContactCalendar(false)}
-                >
-                  <Text style={[styles.calendarButtonText, { color: theme.text }]}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.secondary, borderColor: theme.secondary }]}
-                  onPress={() => {
-                    // Clear the last contact date
-                    updateField('lastContactDate', null);
-                    setShowLastContactCalendar(false);
-                  }}
-                >
-                  <Text style={[styles.calendarButtonText, { color: '#FFFFFF' }]}>Clear Date</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-        </Modal>
-      </>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-      {/* Birthday Calendar Modal */}
-      <Modal
-        visible={showBirthdayCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowBirthdayCalendar(false)}
-      >
-        <View style={styles.calendarOverlay}>
-          <View style={[styles.calendarModal, { backgroundColor: theme.cardBackground }]}>
-            <View style={[styles.calendarHeader, { borderBottomColor: theme.border }]}>
-              <TouchableOpacity onPress={() => navigateBirthdayMonth(-1)}>
-                <ChevronLeft size={24} color={theme.primary} />
-              </TouchableOpacity>
-              <Text style={[styles.calendarTitle, { color: theme.text }]}>
-                {birthdayCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </Text>
-              <TouchableOpacity onPress={() => navigateBirthdayMonth(1)}>
-                <ChevronRight size={24} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calendarContent}>
-              <View style={styles.weekDays}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <Text key={day} style={[styles.weekDayText, { color: theme.primary }]}>
-                    {day}
-                  </Text>
-                ))}
-              </View>
-
-              <View style={styles.calendarGrid}>
-                {generateBirthdayCalendarDays().map((date, index) => {
-                  const isCurrentMonth = date.getMonth() === birthdayCalendarDate.getMonth();
-                  const isSelected = profile.birthday && 
-                    date.toISOString().split('T')[0] === profile.birthday.split('T')[0];
-                  const isToday = date.toDateString() === new Date().toDateString();
-
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.calendarDay,
-                        isSelected && { backgroundColor: theme.secondary },
-                        isToday && !isSelected && { borderColor: theme.secondary, borderWidth: 1 }
-                      ]}
-                      onPress={() => selectBirthdayDate(date)}
-                    >
-                      <Text style={[
-                        styles.calendarDayText,
-                        { color: isCurrentMonth ? theme.text : theme.primary },
-                        isSelected && { color: '#FFFFFF' }
-                      ]}>
-                        {date.getDate()}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={styles.calendarFooter}>
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.accent, borderColor: theme.border }]}
-                  onPress={() => setShowBirthdayCalendar(false)}
-                >
-                  <Text style={[styles.calendarButtonText, { color: theme.text }]}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.secondary, borderColor: theme.secondary }]}
-                  onPress={() => {
-                    updateField('birthday', null);
-                    setShowBirthdayCalendar(false);
-                  }}
-                >
-                  <Text style={[styles.calendarButtonText, { color: '#FFFFFF' }]}>Clear Date</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
@@ -1270,177 +962,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8,
   },
-  addCustomColorButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  customColorForm: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  customColorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  customColorInputs: {
-    gap: 12,
-  },
-  customColorInput: {
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    borderWidth: 1,
-    letterSpacing: 0,
-  },
-  colorInputRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  colorInputGroup: {
-    flex: 1,
-  },
-  colorInputLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  colorInput: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    fontSize: 12,
-    borderWidth: 1,
-    letterSpacing: 0,
-  },
-  colorPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  colorPreviewLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  colorPreviewSwatch: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  colorPreviewText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  customColorActions: {
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-  },
-  customColorButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  customColorButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-  },
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  dateSelectorText: {
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  calendarOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarModal: {
-    width: '90%',
-    maxWidth: 400,
-    borderRadius: 12,
-    padding: 20,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    marginBottom: 16,
-  },
-  calendarTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  calendarContent: {
-    gap: 16,
-  },
-  weekDays: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  weekDayText: {
-    fontSize: 14,
-    fontWeight: '500',
-    width: 40,
-    textAlign: 'center',
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  calendarDay: {
-    width: '14.28%',
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  calendarDayText: {
-    fontSize: 16,
-  },
-  calendarFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-  },
-  calendarButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  calendarButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
   photoContainer: {
     alignItems: 'center',
   },
@@ -1466,19 +987,9 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
   },
-  removePhotoButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   replacePhotoButton: {
     position: 'absolute',
-    bottom: 8,
+    top: 8,
     right: 8,
     width: 28,
     height: 28,

@@ -81,11 +81,7 @@ export default function CreateProfile() {
   const [newTag, setNewTag] = useState('');
   const [selectedTagColor, setSelectedTagColor] = useState(TAG_COLORS[0]);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showLastContactCalendar, setShowLastContactCalendar] = useState(false);
-  const [lastContactCalendarDate, setLastContactCalendarDate] = useState(new Date());
   const [selectedImage, setSelectedImage] = useState(null);
-  const [showBirthdayCalendar, setShowBirthdayCalendar] = useState(false);
-  const [birthdayCalendarDate, setBirthdayCalendarDate] = useState(new Date());
 
   const theme = {
     text: '#f0f0f0',
@@ -151,12 +147,6 @@ export default function CreateProfile() {
       ...prev,
       [field]: value
     }));
-  };
-
-  const navigateLastContactMonth = (direction: number) => {
-    const newDate = new Date(lastContactCalendarDate);
-    newDate.setMonth(newDate.getMonth() + direction);
-    setLastContactCalendarDate(newDate);
   };
 
   const handleAddPhoto = async () => {
@@ -269,63 +259,69 @@ export default function CreateProfile() {
     updateField('photoUri', null);
   };
 
-  const generateLastContactCalendarDays = () => {
-    const year = lastContactCalendarDate.getFullYear();
-    const month = lastContactCalendarDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const handleBirthdayInputChange = (text: string) => {
+    // Allow user to type freely
+    updateField('birthday', text);
     
-    const days = [];
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      days.push(date);
+    // Only validate when they've entered exactly 10 characters (MM/DD/YYYY)
+    if (text.length === 10) {
+      const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+      
+      if (!dateRegex.test(text)) {
+        Alert.alert(
+          'Invalid Date Format',
+          'Please use MM/DD/YYYY format (e.g., 03/15/1990)',
+          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+        );
+        return;
+      }
+      
+      // Parse the date
+      const [month, day, year] = text.split('/').map(num => parseInt(num));
+      const inputDate = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+      
+      // Check if date is valid (handles invalid dates like 02/30/2000)
+      if (inputDate.getMonth() !== month - 1 || inputDate.getDate() !== day || inputDate.getFullYear() !== year) {
+        Alert.alert(
+          'Invalid Date',
+          'Please enter a valid date (e.g., 03/15/1990)',
+          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+        );
+        return;
+      }
+      
+      // Check if date is in the future
+      if (inputDate > today) {
+        Alert.alert(
+          'Invalid Birthday',
+          'Birthday cannot be in the future. Please enter a past date.',
+          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+        );
+        return;
+      }
     }
-    return days;
   };
 
-  const selectLastContactDate = (date: Date) => {
-    updateField('lastContactDate', date.toISOString());
-    setShowLastContactCalendar(false);
-  };
-
-  const navigateBirthdayMonth = (direction: number) => {
-    const newDate = new Date(birthdayCalendarDate);
-    newDate.setMonth(newDate.getMonth() + direction);
-    setBirthdayCalendarDate(newDate);
-  };
-
-  const selectBirthdayDate = (date: Date) => {
-    updateField('birthday', date.toISOString());
-    setShowBirthdayCalendar(false);
-  };
-
-  const generateBirthdayCalendarDays = () => {
-    const year = birthdayCalendarDate.getFullYear();
-    const month = birthdayCalendarDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const formatBirthdayForDisplay = () => {
+    if (!profile.birthday) return '';
     
-    const days = [];
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      days.push(date);
+    // If it's already in MM/DD/YYYY format, return as is
+    if (profile.birthday.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      return profile.birthday;
     }
-    return days;
-  };
-
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    
+    // If it's in ISO format, convert to MM/DD/YYYY
+    try {
+      const date = new Date(profile.birthday);
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`;
+    } catch {
+      return profile.birthday;
+    }
   };
 
   return (
@@ -400,21 +396,15 @@ export default function CreateProfile() {
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.text }]}>Birthday</Text>
-            <TouchableOpacity
-              style={[styles.dateSelector, { backgroundColor: theme.accent, borderColor: theme.border }]}
-              onPress={() => {
-                setBirthdayCalendarDate(new Date());
-                setShowBirthdayCalendar(true);
-              }}
-            >
-              <Calendar size={20} color={theme.primary} />
-              <Text style={[styles.dateSelectorText, { color: theme.text }]}>
-                {profile.birthday 
-                  ? formatDisplayDate(profile.birthday.split('T')[0])
-                  : 'Select Birthday'
-                }
-              </Text>
-            </TouchableOpacity>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
+              value={formatBirthdayForDisplay()}
+              onChangeText={handleBirthdayInputChange}
+              placeholder="MM/DD/YYYY (e.g., 03/15/1990)"
+              placeholderTextColor={theme.primary}
+              keyboardType="numeric"
+              maxLength={10}
+            />
           </View>
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.text }]}>Relationship</Text>
@@ -767,190 +757,11 @@ export default function CreateProfile() {
         {/* Last Contact */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Last Contact</Text>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Date (Optional)</Text>
-            <TouchableOpacity
-              style={[styles.dateSelector, { backgroundColor: theme.accent, borderColor: theme.border }]}
-              onPress={() => {
-                setLastContactCalendarDate(new Date());
-                setShowLastContactCalendar(true);
-              }}
-            >
-              <Calendar size={20} color={theme.primary} />
-              <Text style={[styles.dateSelectorText, { color: theme.text }]}>
-                {profile.lastContactDate 
-                  ? formatDisplayDate(profile.lastContactDate.split('T')[0])
-                  : 'Select Date'
-                }
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.helperText, { color: theme.primary }]}>
+            Last contact date is automatically set to today when you create a profile
+          </Text>
         </View>
       </ScrollView>
-
-      {/* Birthday Calendar Modal */}
-      <Modal
-        visible={showBirthdayCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowBirthdayCalendar(false)}
-      >
-        <View style={styles.calendarOverlay}>
-          <View style={[styles.calendarModal, { backgroundColor: theme.cardBackground }]}>
-            <View style={[styles.calendarHeader, { borderBottomColor: theme.border }]}>
-              <TouchableOpacity onPress={() => navigateBirthdayMonth(-1)}>
-                <ChevronLeft size={24} color={theme.primary} />
-              </TouchableOpacity>
-              <Text style={[styles.calendarTitle, { color: theme.text }]}>
-                {birthdayCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </Text>
-              <TouchableOpacity onPress={() => navigateBirthdayMonth(1)}>
-                <ChevronRight size={24} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calendarContent}>
-              <View style={styles.weekDays}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <Text key={day} style={[styles.weekDayText, { color: theme.primary }]}>
-                    {day}
-                  </Text>
-                ))}
-              </View>
-
-              <View style={styles.calendarGrid}>
-                {generateBirthdayCalendarDays().map((date, index) => {
-                  const isCurrentMonth = date.getMonth() === birthdayCalendarDate.getMonth();
-                  const isSelected = profile.birthday && 
-                    date.toISOString().split('T')[0] === profile.birthday.split('T')[0];
-                  const isToday = date.toDateString() === new Date().toDateString();
-
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.calendarDay,
-                        isSelected && { backgroundColor: theme.secondary },
-                        isToday && !isSelected && { borderColor: theme.secondary, borderWidth: 1 }
-                      ]}
-                      onPress={() => selectBirthdayDate(date)}
-                    >
-                      <Text style={[
-                        styles.calendarDayText,
-                        { color: isCurrentMonth ? theme.text : theme.primary },
-                        isSelected && { color: '#FFFFFF' }
-                      ]}>
-                        {date.getDate()}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={styles.calendarFooter}>
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.accent, borderColor: theme.border }]}
-                  onPress={() => setShowBirthdayCalendar(false)}
-                >
-                  <Text style={[styles.calendarButtonText, { color: theme.text }]}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.secondary, borderColor: theme.secondary }]}
-                  onPress={() => {
-                    updateField('birthday', null);
-                    setShowBirthdayCalendar(false);
-                  }}
-                >
-                  <Text style={[styles.calendarButtonText, { color: '#FFFFFF' }]}>Clear Date</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Last Contact Calendar Modal */}
-      <Modal
-        visible={showLastContactCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowLastContactCalendar(false)}
-      >
-        <View style={styles.calendarOverlay}>
-          <View style={[styles.calendarModal, { backgroundColor: theme.cardBackground }]}>
-            <View style={[styles.calendarHeader, { borderBottomColor: theme.border }]}>
-              <TouchableOpacity onPress={() => navigateLastContactMonth(-1)}>
-                <ChevronLeft size={24} color={theme.primary} />
-              </TouchableOpacity>
-              <Text style={[styles.calendarTitle, { color: theme.text }]}>
-                {lastContactCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </Text>
-              <TouchableOpacity onPress={() => navigateLastContactMonth(1)}>
-                <ChevronRight size={24} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.calendarContent}>
-              <View style={styles.weekDays}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <Text key={day} style={[styles.weekDayText, { color: theme.primary }]}>
-                    {day}
-                  </Text>
-                ))}
-              </View>
-
-              <View style={styles.calendarGrid}>
-                {generateLastContactCalendarDays().map((date, index) => {
-                  const isCurrentMonth = date.getMonth() === lastContactCalendarDate.getMonth();
-                  const isSelected = profile.lastContactDate && 
-                    date.toISOString().split('T')[0] === profile.lastContactDate.split('T')[0];
-                  const isToday = date.toDateString() === new Date().toDateString();
-
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.calendarDay,
-                        isSelected && { backgroundColor: theme.secondary },
-                        isToday && !isSelected && { borderColor: theme.secondary, borderWidth: 1 }
-                      ]}
-                      onPress={() => selectLastContactDate(date)}
-                    >
-                      <Text style={[
-                        styles.calendarDayText,
-                        { color: isCurrentMonth ? theme.text : theme.primary },
-                        isSelected && { color: '#FFFFFF' }
-                      ]}>
-                        {date.getDate()}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={styles.calendarFooter}>
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.accent, borderColor: theme.border }]}
-                  onPress={() => setShowLastContactCalendar(false)}
-                >
-                  <Text style={[styles.calendarButtonText, { color: theme.text }]}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.calendarButton, { backgroundColor: theme.secondary, borderColor: theme.secondary }]}
-                  onPress={() => {
-                    updateField('lastContactDate', null);
-                    setShowLastContactCalendar(false);
-                  }}
-                >
-                  <Text style={[styles.calendarButtonText, { color: '#FFFFFF' }]}>Clear Date</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -1107,84 +918,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8,
   },
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  dateSelectorText: {
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  calendarOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarModal: {
-    width: '90%',
-    maxWidth: 400,
-    borderRadius: 12,
-    padding: 20,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    marginBottom: 16,
-  },
-  calendarTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  calendarContent: {
-    gap: 16,
-  },
-  weekDays: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  weekDayText: {
-    fontSize: 14,
-    fontWeight: '500',
-    width: 40,
-    textAlign: 'center',
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  calendarDay: {
-    width: '14.28%',
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  calendarDayText: {
-    fontSize: 16,
-  },
-  calendarFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-  },
-  calendarButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  calendarButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
   photoContainer: {
     alignItems: 'center',
   },
@@ -1219,5 +952,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  helperText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontStyle: 'italic',
   },
 });

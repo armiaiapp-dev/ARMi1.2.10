@@ -174,7 +174,7 @@ export default function ProfileDetail() {
             <View style={styles.infoItem}>
               <Calendar size={20} color={theme.primary} style={styles.infoIcon} />
               <Text style={[styles.infoText, { color: theme.text }]}>
-                Birthday: {formatDate(profile.birthday)}
+                Birthday: {profile.birthday.match(/^\d{2}\/\d{2}\/\d{4}$/) ? profile.birthday : formatDate(profile.birthday)}
               </Text>
             </View>
           )}
