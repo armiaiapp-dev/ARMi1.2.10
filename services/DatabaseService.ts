@@ -183,6 +183,7 @@ class DatabaseServiceClass {
       if (!columnNames.includes('twitter')) missingColumns.push('twitter TEXT');
       if (!columnNames.includes('tiktok')) missingColumns.push('tiktok TEXT');
       if (!columnNames.includes('facebook')) missingColumns.push('facebook TEXT');
+      if (!columnNames.includes('birthday')) missingColumns.push('birthday TEXT');
       
       // Add missing columns
       for (const column of missingColumns) {

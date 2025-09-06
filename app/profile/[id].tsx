@@ -175,6 +175,15 @@ export default function ProfileDetail() {
           {profile.age && (
             <Text style={[styles.age, { color: theme.primary }]}>{profile.age} years old</Text>
           )}
+          
+          {profile.birthday && (
+            <View style={styles.infoItem}>
+              <Calendar size={20} color={theme.primary} style={styles.infoIcon} />
+              <Text style={[styles.infoText, { color: theme.text }]}>
+                Birthday: {formatDate(profile.birthday)}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Basic Information */}

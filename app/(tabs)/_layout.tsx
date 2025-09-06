@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import { Users, MessageSquarePlus, Bell, Settings } from 'lucide-react-native';
+import { Users, MessageSquarePlus, Bell, Settings, MessageSquareText } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -54,6 +54,15 @@ export default function TabLayout() {
             title: 'Reminders',
             tabBarIcon: ({ size, color }) => (
               <Bell size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="scheduler"
+          options={{
+            title: 'Scheduler',
+            tabBarIcon: ({ size, color }) => (
+              <MessageSquareText size={size} color={color} />
             ),
           }}
         />

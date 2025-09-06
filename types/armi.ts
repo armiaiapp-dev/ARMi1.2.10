@@ -10,6 +10,7 @@ export interface Profile {
   company?: string;
   title?: string;
   kidsCount?: number;
+  birthday?: string;
   createdAt: string; // ISO
 }
 
