@@ -12,8 +12,6 @@ export default function ProfileDetail() {
   const router = useRouter();
   const { isDark } = useTheme();
   
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   const theme = {
     text: '#f0f0f0',
@@ -70,43 +68,6 @@ export default function ProfileDetail() {
         return isDark ? '#7F1D1D' : '#FEE2E2';
       case 'partner':
         return isDark ? '#831843' : '#FCE7F3';
-      case 'friend':
-        return isDark ? '#1E3A8A' : '#DBEAFE';
-      case 'coworker':
-        return isDark ? '#064E3B' : '#D1FAE5';
-      default:
-        return isDark ? '#374151' : '#F3F4F6';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(parseISO(dateString), 'MMM d, yyyy');
-    } catch {
-      return dateString;
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  const handlePhonePress = async (phoneNumber: string) => {
-    try {
-      const phoneUrl = `tel:${phoneNumber}`;
-      const supported = await Linking.canOpenURL(phoneUrl);
-      
-      if (supported) {
-        await Linking.openURL(phoneUrl);
-      } else {
-        Alert.alert('Error', 'Phone calls are not supported on this device');
-      }
-    } catch (error) {
-      console.error('Error opening phone dialer:', error);
-      Alert.alert('Error', 'Failed to open phone dialer');
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -349,88 +310,6 @@ export default function ProfileDetail() {
                 <User size={20} color="#1DA1F2" style={styles.infoIcon} />
                 <View style={styles.infoContent}>
                   <Text style={[styles.infoLabel, { color: theme.primary }]}>X (Twitter):</Text>
-                  <Text style={[styles.infoText, { color: theme.text }]}>{profile.twitter}</Text>
-                </View>
-              </View>
-            )}
-            
-            {profile.tiktok && (
-              <View style={styles.infoItem}>
-                <User size={20} color="#FF0050" style={styles.infoIcon} />
-                <View style={styles.infoContent}>
-                  <Text style={[styles.infoLabel, { color: theme.primary }]}>TikTok:</Text>
-                  <Text style={[styles.infoText, { color: theme.text }]}>{profile.tiktok}</Text>
-                </View>
-              </View>
-            )}
-            
-            {profile.facebook && (
-              <View style={styles.infoItem}>
-                <User size={20} color="#1877F2" style={styles.infoIcon} />
-                <View style={styles.infoContent}>
-                  <Text style={[styles.infoLabel, { color: theme.primary }]}>Facebook:</Text>
-                  <Text style={[styles.infoText, { color: theme.text }]}>{profile.facebook}</Text>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Tags */}
-        {profile.tags && profile.tags.length > 0 && (
-          <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Tags</Text>
-            <View style={styles.tagsContainer}>
-              {profile.tags.map((tag, index) => (
-                <View 
-                  key={index} 
-                  style={[
-                    styles.tag, 
-                    { 
-                      backgroundColor: isDark 
-                        ? (typeof tag === 'object' && tag.color ? tag.color.dark : theme.accent)
-                        : (typeof tag === 'object' && tag.color ? tag.color.light : theme.accent)
-                    }
-                  ]}
-                >
-                  <Tag size={12} color={
-                    isDark ? '#FFFFFF' : 
-                    (typeof tag === 'object' && tag.color ? tag.color.text : theme.text)
-                  } />
-                  <Text style={[
-                    styles.tagText, 
-                    { 
-                      color: isDark ? '#FFFFFF' : 
-                      (typeof tag === 'object' && tag.color ? tag.color.text : theme.text)
-                    }
-                  ]}>
-                    {typeof tag === 'string' ? tag : tag.text}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Notes */}
-        {profile.notes && (
-          <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notes</Text>
-            <Text style={[styles.notesText, { color: theme.text }]}>{profile.notes}</Text>
-          </View>
-        )}
-
-        {/* Last Contact */}
-        {profile.lastContactDate && (
-          <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Last Contact</Text>
-            <View style={styles.infoItem}>
-              <Calendar size={20} color={theme.primary} style={styles.infoIcon} />
-              <Text style={[styles.infoText, { color: theme.text }]}>{formatDate(profile.lastContactDate)}</Text>
-            </View>
-          </View>
-        )}
-      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -495,72 +374,6 @@ const styles = StyleSheet.create({
   relationshipBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 8,
-  },
-  relationshipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  age: {
-    fontSize: 16,
-  },
-  section: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 8,
-  },
-  infoIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  infoText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  notesText: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
