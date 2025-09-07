@@ -9,10 +9,12 @@ import {
 } from 'react-native';
 import { MessageSquareText, Plus, Calendar, Clock } from 'lucide-react-native';
 import { useTheme } from '@/context/ThemeContext';
+import { AddScheduledTextModal } from '@/components/AddScheduledTextModal';
 
 export default function SchedulerScreen() {
   const { isDark } = useTheme();
   const [scheduledTexts, setScheduledTexts] = useState([]);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const theme = {
     text: '#f0f0f0',
@@ -26,8 +28,12 @@ export default function SchedulerScreen() {
   };
 
   const handleAddScheduledText = () => {
-    // TODO: Navigate to create scheduled text screen
-    console.log('Add scheduled text pressed');
+    setShowAddModal(true);
+  };
+
+  const handleTextScheduled = () => {
+    // TODO: Refresh the scheduled texts list
+    console.log('Text scheduled successfully');
   };
 
   return (
@@ -74,6 +80,13 @@ export default function SchedulerScreen() {
           </View>
         )}
       </ScrollView>
+
+      <AddScheduledTextModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onTextScheduled={handleTextScheduled}
+        theme={theme}
+      />
 
       {/* Feature Preview */}
       <View style={[styles.featurePreview, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>

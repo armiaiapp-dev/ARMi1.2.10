@@ -158,6 +158,22 @@ class DatabaseServiceClass {
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Scheduled texts table
+      await this.db!.execAsync(`
+        CREATE TABLE IF NOT EXISTS scheduled_texts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          profileId INTEGER,
+          phoneNumber TEXT NOT NULL,
+          message TEXT NOT NULL,
+          scheduledFor TEXT NOT NULL,
+          sent INTEGER DEFAULT 0,
+          notificationId TEXT,
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+          updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (profileId) REFERENCES profiles (id)
+        );
+      `);
       
       console.log('All tables created successfully');
     } catch (error) {
@@ -640,6 +656,93 @@ class DatabaseServiceClass {
     
     // Finally delete the profile
     await this.db!.runAsync('DELETE FROM profiles WHERE id = ?', [profileId]);
+  }
+
+  async createScheduledText(textData: any) {
+    await this.ensureReady();
+    
+    if (this.isWebFallback) {
+      console.log('Web fallback: Scheduled text operation simulated');
+      return Math.floor(Math.random() * 1000) + 1;
+    }
+    
+    const { profileId, phoneNumber, message, scheduledFor } = textData;
+    const now = new Date().toISOString();
+    
+    const result = await this.db!.runAsync(`
+      INSERT INTO scheduled_texts (profileId, phoneNumber, message, scheduledFor, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [profileId, phoneNumber, message, scheduledFor, now, now]);
+    
+    return result.lastInsertRowId;
+  }
+
+  async getAllScheduledTexts() {
+    await this.ensureReady();
+    
+    if (this.isWebFallback) {
+      return [
+        {
+          id: 1,
+          profileId: 1,
+          phoneNumber: '+1234567890',
+          message: 'Hey! How are you doing?',
+          scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          sent: 0,
+          notificationId: null,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          profileName: 'John Doe'
+        }
+      ];
+    }
+    
+    const result = await this.db!.getAllAsync(`
+      SELECT st.*, p.name as profileName, p.photoUri as profilePhoto
+      FROM scheduled_texts st
+      LEFT JOIN profiles p ON st.profileId = p.id
+      ORDER BY st.scheduledFor ASC
+    `);
+    
+    return result;
+  }
+
+  async updateScheduledTextNotificationId(textId: number, notificationId: string | null) {
+    await this.ensureReady();
+    
+    if (this.isWebFallback) {
+      console.log('Web fallback: Update scheduled text notification ID operation simulated');
+      return;
+    }
+    
+    await this.db!.runAsync(`
+      UPDATE scheduled_texts SET notificationId = ? WHERE id = ?
+    `, [notificationId, textId]);
+  }
+
+  async markScheduledTextAsSent(textId: number) {
+    await this.ensureReady();
+    
+    if (this.isWebFallback) {
+      console.log('Web fallback: Mark scheduled text as sent operation simulated');
+      return;
+    }
+    
+    const now = new Date().toISOString();
+    await this.db!.runAsync(`
+      UPDATE scheduled_texts SET sent = 1, updatedAt = ? WHERE id = ?
+    `, [now, textId]);
+  }
+
+  async deleteScheduledText(textId: number) {
+    await this.ensureReady();
+    
+    if (this.isWebFallback) {
+      console.log('Web fallback: Delete scheduled text operation simulated');
+      return;
+    }
+    
+    await this.db!.runAsync('DELETE FROM scheduled_texts WHERE id = ?', [textId]);
   }
 
   async submitFeedback(feedbackData: any) {
