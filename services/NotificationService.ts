@@ -433,16 +433,6 @@ class NotificationServiceClass {
       };
       
       // Schedule the notification with Date trigger
-      const triggerObject = {
-        date: scheduledDate,
-        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-      };
-      
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: notificationContent,
-        trigger: triggerObject,
-      });
-      // Create explicit DateTriggerInput object
       const triggerObject: Notifications.DateTriggerInput = {
         date: scheduledDate,
         repeats: false,
@@ -558,16 +548,6 @@ class NotificationServiceClass {
       };
       
       // Schedule the notification with Date trigger
-      const triggerObject = {
-        date: scheduledDate.getTime(),
-        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-      };
-      
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: notificationContent,
-        trigger: triggerObject,
-      });
-      // Create explicit DateTriggerInput object
       const triggerObject: Notifications.DateTriggerInput = {
         date: scheduledDate,
         repeats: false,
