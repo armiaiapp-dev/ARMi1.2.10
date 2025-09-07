@@ -56,13 +56,40 @@ export default function RootLayout() {
 
       const responseSubscription = NotificationService.addNotificationResponseListener(
         async (response) => {
-          const { reminderId, type } = response.notification.request.content.data;
+          const { reminderId, textId, phoneNumber, message, type } = response.notification.request.content.data;
           
           if (type === 'random_app_engagement') {
             // User tapped on a random app engagement notification
             console.log('Random app engagement notification tapped');
             // Navigate to main app
             router.push('/(tabs)');
+          } else if (type === 'scheduled_text') {
+            // Handle scheduled text notifications
+            if (response.actionIdentifier === 'edit-scheduled-text') {
+              // User tapped "Edit" action on scheduled text notification
+              console.log('📱 Edit scheduled text action tapped for textId:', textId);
+              // TODO: In Phase 3, navigate to edit screen for this scheduled text
+              router.push('/(tabs)/scheduler');
+            } else {
+              // User tapped the notification body (default action)
+              console.log('📱 Scheduled text notification tapped:', {
+                textId,
+                phoneNumber,
+                message: message?.substring(0, 50) + (message?.length > 50 ? '...' : '')
+              });
+              
+              // Mark the scheduled text as sent
+              try {
+                await DatabaseService.markScheduledTextAsSent(textId);
+                console.log('📱 Marked scheduled text as sent:', textId);
+              } catch (error) {
+                console.error('Failed to mark scheduled text as sent:', error);
+              }
+              
+              // TODO: In Phase 3, implement deep linking to messaging app with pre-filled data
+              // For now, navigate to scheduler screen
+              router.push('/(tabs)/scheduler');
+            }
           } else if (reminderId) {
             // Handle reminder notifications as before
             router.push('/(tabs)/reminders');

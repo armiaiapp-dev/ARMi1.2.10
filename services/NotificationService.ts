@@ -69,6 +69,17 @@ class NotificationServiceClass {
         });
       }
 
+      // Configure notification category for scheduled texts with Edit action
+      await Notifications.setNotificationCategoryAsync('scheduled-text-category', [
+        {
+          identifier: 'edit-scheduled-text',
+          buttonTitle: 'Edit',
+          options: {
+            opensAppToForeground: true,
+          },
+        },
+      ]);
+
       this.isInitialized = true;
       console.log('Notification service initialized successfully');
       return true;
@@ -364,6 +375,77 @@ class NotificationServiceClass {
       console.log('Random app notifications stopped');
     } catch (error) {
       console.error('Failed to stop random app notifications:', error);
+    }
+  }
+
+  async scheduleScheduledTextNotification(scheduledText: {
+    id: number;
+    phoneNumber: string;
+    message: string;
+    scheduledFor: Date;
+    profileName?: string;
+  }) {
+    try {
+      if (!this.isInitialized) {
+        const initialized = await this.init();
+        if (!initialized) {
+          throw new Error('Notifications not initialized');
+        }
+      }
+
+      const scheduledDate = scheduledText.scheduledFor;
+      const now = new Date();
+
+      console.log('📱 TEXT NOTIFICATION DEBUG - Scheduling text notification for:', scheduledDate.toLocaleString());
+      console.log('📱 TEXT NOTIFICATION DEBUG - Current time:', now.toLocaleString());
+      
+      if (scheduledDate <= now) {
+        console.warn('📱 TEXT NOTIFICATION DEBUG - Cannot schedule notification for past date:', scheduledDate.toLocaleString());
+        return null;
+      }
+
+      // Add buffer to ensure notification is scheduled far enough in the future
+      const timeDifferenceMs = scheduledDate.getTime() - now.getTime();
+      const minimumBufferMs = 10000; // 10 seconds buffer
+      
+      if (timeDifferenceMs < minimumBufferMs) {
+        console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
+        scheduledDate.setTime(now.getTime() + minimumBufferMs);
+        console.log(`📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
+      }
+
+      // Create notification content
+      const notificationContent: Notifications.NotificationContentInput = {
+        title: `Time to text ${scheduledText.profileName || 'someone'}!`,
+        body: `"${scheduledText.message.substring(0, 50)}${scheduledText.message.length > 50 ? '...' : ''}"`,
+        data: {
+          textId: scheduledText.id,
+          phoneNumber: scheduledText.phoneNumber,
+          message: scheduledText.message,
+          type: 'scheduled_text',
+        },
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        categoryIdentifier: 'scheduled-text-category',
+      };
+      
+      // Schedule the notification with Date trigger
+      const triggerObject = {
+        date: scheduledDate,
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      };
+      
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: notificationContent,
+        trigger: triggerObject,
+      });
+
+      console.log(`📱 TEXT NOTIFICATION DEBUG - Scheduled text notification ${notificationId} for text ${scheduledText.id} at ${scheduledDate.toLocaleString()}`);
+      
+      return notificationId;
+    } catch (error) {
+      console.error('Failed to schedule text notification:', error);
+      throw error;
     }
   }
 

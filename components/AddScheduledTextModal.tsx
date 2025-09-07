@@ -138,15 +138,24 @@ export function AddScheduledTextModal({ visible, onClose, onTextScheduled, theme
         profileName = profile?.name || null;
       }
       
-      // Schedule push notification (we'll implement this in Phase 2)
-      // For now, just log that we would schedule a notification
-      console.log('Would schedule notification for text:', {
-        id: textId,
-        phoneNumber: phoneNumber.trim(),
-        message: message.trim(),
-        scheduledFor: scheduledDateTime,
-        profileName,
-      });
+      // Schedule push notification
+      try {
+        const notificationId = await NotificationService.scheduleScheduledTextNotification({
+          id: textId,
+          phoneNumber: phoneNumber.trim(),
+          message: message.trim(),
+          scheduledFor: scheduledDateTime,
+          profileName,
+        });
+        
+        // Update scheduled text with notification ID
+        if (notificationId) {
+          await DatabaseService.updateScheduledTextNotificationId(textId, notificationId);
+        }
+      } catch (notificationError) {
+        console.error('Failed to schedule text notification:', notificationError);
+        // Don't fail the entire operation if notification scheduling fails
+      }
       
       Alert.alert('Success', 'Text scheduled successfully');
       handleClose();
