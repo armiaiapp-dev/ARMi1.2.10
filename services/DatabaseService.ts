@@ -537,12 +537,14 @@ class DatabaseServiceClass {
     }
     
     const { profileId, title, description, type = 'general', scheduledFor } = reminderData;
+    // Convert Date object to ISO string for database storage
+    const scheduledForISO = scheduledFor instanceof Date ? scheduledFor.toISOString() : scheduledFor;
     const now = new Date().toISOString();
     
     const result = await this.db!.runAsync(`
       INSERT INTO reminders (profileId, title, description, type, scheduledFor, createdAt, notificationId)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [profileId, title, description, type, scheduledFor, now, null]);
+    `, [profileId, title, description, type, scheduledForISO, now, null]);
     
     return result.lastInsertRowId;
   }
@@ -569,9 +571,12 @@ class DatabaseServiceClass {
       return;
     }
     
+    // Convert Date string to ISO string for database storage
+    const newDateISO = new Date(newDate).toISOString();
+    
     await this.db!.runAsync(`
       UPDATE reminders SET scheduledFor = ? WHERE id = ?
-    `, [newDate, reminderId]);
+    `, [newDateISO, reminderId]);
   }
 
   async updateReminderNotificationId(reminderId: number, notificationId: string | null) {
@@ -596,6 +601,8 @@ class DatabaseServiceClass {
     }
     
     const { id, title, description, type, profileId, scheduledFor } = reminderData;
+    // Convert Date object to ISO string for database storage
+    const scheduledForISO = scheduledFor instanceof Date ? scheduledFor.toISOString() : scheduledFor;
     
     await this.db!.runAsync(`
       UPDATE reminders SET 
@@ -605,7 +612,7 @@ class DatabaseServiceClass {
         profileId = ?, 
         scheduledFor = ?
       WHERE id = ?
-    `, [title, description, type, profileId, scheduledFor, id]);
+    `, [title, description, type, profileId, scheduledForISO, id]);
   }
 
   async getReminderById(reminderId: number) {
@@ -667,12 +674,14 @@ class DatabaseServiceClass {
     }
     
     const { profileId, phoneNumber, message, scheduledFor } = textData;
+    // Convert Date object to ISO string for database storage
+    const scheduledForISO = scheduledFor instanceof Date ? scheduledFor.toISOString() : scheduledFor;
     const now = new Date().toISOString();
     
     const result = await this.db!.runAsync(`
       INSERT INTO scheduled_texts (profileId, phoneNumber, message, scheduledFor, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?)
-    `, [profileId, phoneNumber, message, scheduledFor, now, now]);
+    `, [profileId, phoneNumber, message, scheduledForISO, now, now]);
     
     return result.lastInsertRowId;
   }

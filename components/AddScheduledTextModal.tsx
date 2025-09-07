@@ -125,7 +125,7 @@ export function AddScheduledTextModal({ visible, onClose, onTextScheduled, theme
         profileId: selectedProfile,
         phoneNumber: phoneNumber.trim(),
         message: message.trim(),
-        scheduledFor: scheduledDateTime.toISOString(),
+        scheduledFor: scheduledDateTime,
       };
 
       // Create the scheduled text in database

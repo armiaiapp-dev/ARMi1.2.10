@@ -85,9 +85,18 @@ export function EditReminderModal({ visible, onClose, onReminderUpdated, reminde
     setSelectedType(reminder.type);
     setSelectedProfile(reminder.profileId || null);
 
-    // Parse the scheduled date and time
-    const scheduledDateTime = new Date(reminder.scheduledFor);
-    // Use local date components to avoid timezone issues
+    // Parse the scheduled date and time - handle both Date objects and ISO strings
+    let scheduledDateTime;
+    if (typeof reminder.scheduledFor === 'string') {
+      // If it's an ISO string from database, parse it as UTC then convert to local
+      const utcDate = new Date(reminder.scheduledFor);
+      scheduledDateTime = new Date(utcDate.getTime() + (utcDate.getTimezoneOffset() * 60000));
+    } else {
+      // If it's already a Date object, use it directly
+      scheduledDateTime = new Date(reminder.scheduledFor);
+    }
+    
+    // Use local date components
     const year = scheduledDateTime.getFullYear();
     const month = (scheduledDateTime.getMonth() + 1).toString().padStart(2, '0');
     const day = scheduledDateTime.getDate().toString().padStart(2, '0');
@@ -155,7 +164,7 @@ export function EditReminderModal({ visible, onClose, onReminderUpdated, reminde
         description: description.trim() || null,
         type: selectedType,
         profileId: selectedProfile,
-        scheduledFor: scheduledDateTime.toISOString(),
+        scheduledFor: scheduledDateTime,
       };
 
       await DatabaseService.updateReminder(updatedReminderData);

@@ -382,7 +382,7 @@ class NotificationServiceClass {
     id: number;
     phoneNumber: string;
     message: string;
-    scheduledFor: string | Date;
+    scheduledFor: Date;
     profileName?: string;
   }) {
     try {
@@ -393,10 +393,8 @@ class NotificationServiceClass {
         }
       }
 
-      // Parse the scheduled date correctly (handle both string and Date inputs)
-      const scheduledDate = typeof scheduledText.scheduledFor === 'string' 
-        ? new Date(scheduledText.scheduledFor)
-        : new Date(scheduledText.scheduledFor.getTime());
+      // Use the Date object directly (no timezone conversion)
+      const scheduledDate = new Date(scheduledText.scheduledFor.getTime());
       const now = new Date();
 
       console.log('📱 TEXT NOTIFICATION DEBUG - Scheduling text notification for:', scheduledDate.toLocaleString());
@@ -489,7 +487,7 @@ class NotificationServiceClass {
     id: number;
     title: string;
     description?: string;
-    scheduledFor: string | Date;
+    scheduledFor: Date;
     profileName?: string;
   }) {
     try {
@@ -500,10 +498,8 @@ class NotificationServiceClass {
         }
       }
 
-      // Parse the scheduled date correctly (handle both string and Date inputs)
-      const scheduledDate = typeof reminder.scheduledFor === 'string' 
-        ? new Date(reminder.scheduledFor)
-        : new Date(reminder.scheduledFor.getTime());
+      // Use the Date object directly (no timezone conversion)
+      const scheduledDate = new Date(reminder.scheduledFor.getTime());
       const now = new Date();
 
       console.log('🔔 NOTIFICATION DEBUG - Scheduling notification for:', scheduledDate.toLocaleString());
