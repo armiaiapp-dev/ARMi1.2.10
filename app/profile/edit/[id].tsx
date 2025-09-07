@@ -105,13 +105,43 @@ export default function EditProfile() {
         const profileData = await DatabaseService.getProfileById(parseInt(id));
         if (profileData) {
           setProfile(profileData);
-          populateProfileData();
+          populateProfileData(profileData);
         }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const populateProfileData = (profileData: any) => {
+    // Convert arrays to comma-separated strings for text inputs
+    const parentsText = profileData.parents ? profileData.parents.join(', ') : '';
+    const kidsText = profileData.kids ? profileData.kids.join(', ') : '';
+    const brothersText = profileData.brothers ? profileData.brothers.join(', ') : '';
+    const sistersText = profileData.sisters ? profileData.sisters.join(', ') : '';
+    const siblingsText = profileData.siblings ? profileData.siblings.join(', ') : '';
+    const likesText = profileData.foodLikes ? profileData.foodLikes.join(', ') : '';
+    const dislikesText = profileData.foodDislikes ? profileData.foodDislikes.join(', ') : '';
+    const interestsText = profileData.interests ? profileData.interests.join(', ') : '';
+
+    // Update profile state with text representations
+    setProfile(prev => ({
+      ...prev,
+      parentsText,
+      kidsText,
+      brothersText,
+      sistersText,
+      siblingsText,
+      likesText,
+      dislikesText,
+      interestsText,
+    }));
+
+    // Set selected image if profile has a photo
+    if (profileData.photoUri) {
+      setSelectedImage({ uri: profileData.photoUri });
     }
   };
 
