@@ -541,7 +541,7 @@ class NotificationServiceClass {
       
       // Schedule the notification with Date trigger
       const triggerObject = {
-        date: scheduledDate,
+        date: scheduledDate.getTime(),
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
