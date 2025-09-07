@@ -441,16 +441,18 @@ class NotificationServiceClass {
       // Ensure we have a positive number of seconds
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
       
-      // Schedule the notification with seconds trigger
-      const triggerObject: Notifications.TimeIntervalTriggerInput = {
-        seconds: finalSecondsFromNow,
+      // Schedule the notification with date trigger for more explicit scheduling
+      const triggerObject: Notifications.DateTriggerInput = {
+        date: scheduledDate,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object (seconds):', {
-        seconds: finalSecondsFromNow,
+      console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object (date):', {
+        date: scheduledDate.toISOString(),
+        dateLocal: scheduledDate.toLocaleString(),
         originalSeconds: secondsFromNow,
+        finalSecondsFromNow,
         scheduledDate: scheduledDate.toISOString(),
         currentTime: new Date().toISOString(),
         repeats: false,
@@ -567,16 +569,18 @@ class NotificationServiceClass {
       // Ensure we have a positive number of seconds
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
       
-      // Schedule the notification with seconds trigger
-      const triggerObject: Notifications.TimeIntervalTriggerInput = {
-        seconds: finalSecondsFromNow,
+      // Schedule the notification with date trigger for more explicit scheduling
+      const triggerObject: Notifications.DateTriggerInput = {
+        date: scheduledDate,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('🔔 NOTIFICATION DEBUG - Trigger object (seconds):', {
-        seconds: finalSecondsFromNow,
+      console.log('🔔 NOTIFICATION DEBUG - Trigger object (date):', {
+        date: scheduledDate.toISOString(),
+        dateLocal: scheduledDate.toLocaleString(),
         originalSeconds: secondsFromNow,
+        finalSecondsFromNow,
         scheduledDate: scheduledDate.toISOString(),
         currentTime: new Date().toISOString(),
         repeats: false,
