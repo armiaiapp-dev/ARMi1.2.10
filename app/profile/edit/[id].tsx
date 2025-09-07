@@ -125,59 +125,6 @@ export default function EditProfile() {
     try {
       const profileData = {
         ...profile,
-  const loadProfiles = async () => {
-    try {
-      const allProfiles = await DatabaseService.getAllProfiles();
-      setProfiles(allProfiles);
-    } catch (error) {
-      console.error('Error loading profiles:', error);
-    }
-  };
-
-  const populateProfileData = () => {
-    if (!profile) return;
-
-    setProfile({
-      ...profile,
-      // Convert arrays back to text for editing
-      parentsText: profile.parents?.join(', ') || '',
-      kidsText: profile.kids?.join(', ') || '',
-      brothersText: profile.brothers?.join(', ') || '',
-      sistersText: profile.sisters?.join(', ') || '',
-      siblingsText: profile.siblings?.join(', ') || '',
-      likesText: profile.foodLikes?.join(', ') || '',
-      dislikesText: profile.foodDislikes?.join(', ') || '',
-      interestsText: profile.interests?.join(', ') || '',
-    });
-    
-    // Set selected image if profile has photo
-    if (profile.photoUri) {
-      setSelectedImage({ uri: profile.photoUri });
-    }
-    
-    // Convert existing birthday to MM/DD/YYYY format if needed
-    if (profile.birthday) {
-      // If it's in ISO format, convert to MM/DD/YYYY
-      if (profile.birthday.includes('-') && profile.birthday.length > 8) {
-        try {
-          const date = new Date(profile.birthday);
-          if (!isNaN(date.getTime())) {
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const year = date.getFullYear();
-            const formattedBirthday = `${month}/${day}/${year}`;
-            updateField('birthday', formattedBirthday);
-            
-            // Calculate age for existing birthday
-            const calculatedAge = calculateAge(date);
-            updateField('age', calculatedAge);
-          }
-        } catch (error) {
-          console.error('Error converting birthday format:', error);
-        }
-      }
-    }
-  };
         id: parseInt(id),
       };
       
