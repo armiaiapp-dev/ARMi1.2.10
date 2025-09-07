@@ -442,6 +442,24 @@ class NotificationServiceClass {
         content: notificationContent,
         trigger: triggerObject,
       });
+      // Create explicit DateTriggerInput object
+      const triggerObject: Notifications.DateTriggerInput = {
+        date: scheduledDate,
+        repeats: false,
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      };
+      
+      console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object:', {
+        date: scheduledDate.toISOString(),
+        dateTime: scheduledDate.getTime(),
+        repeats: false,
+        platform: Platform.OS
+      });
+      
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: notificationContent,
+        trigger: triggerObject,
+      });
 
       console.log(`📱 TEXT NOTIFICATION DEBUG - Scheduled text notification ${notificationId} for text ${scheduledText.id} at ${scheduledDate.toLocaleString()}`);
       
@@ -544,6 +562,24 @@ class NotificationServiceClass {
         date: scheduledDate.getTime(),
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
+      
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: notificationContent,
+        trigger: triggerObject,
+      });
+      // Create explicit DateTriggerInput object
+      const triggerObject: Notifications.DateTriggerInput = {
+        date: scheduledDate,
+        repeats: false,
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      };
+      
+      console.log('🔔 NOTIFICATION DEBUG - Trigger object:', {
+        date: scheduledDate.toISOString(),
+        dateTime: scheduledDate.getTime(),
+        repeats: false,
+        platform: Platform.OS
+      });
       
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: notificationContent,
