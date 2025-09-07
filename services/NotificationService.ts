@@ -432,16 +432,20 @@ class NotificationServiceClass {
         categoryIdentifier: 'scheduled-text-category',
       };
       
-      // Schedule the notification with Date trigger
-      const triggerObject: Notifications.DateTriggerInput = {
-        date: scheduledDate,
+      // Calculate seconds from now for more reliable scheduling
+      const secondsFromNow = Math.floor((scheduledDate.getTime() - Date.now()) / 1000);
+      
+      // Schedule the notification with seconds trigger
+      const triggerObject: Notifications.TimeIntervalTriggerInput = {
+        seconds: secondsFromNow,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object:', {
-        date: scheduledDate.toISOString(),
-        dateTime: scheduledDate.getTime(),
+      console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object (seconds):', {
+        seconds: secondsFromNow,
+        scheduledDate: scheduledDate.toISOString(),
+        currentTime: new Date().toISOString(),
         repeats: false,
         platform: Platform.OS
       });
@@ -547,16 +551,20 @@ class NotificationServiceClass {
         priority: Notifications.AndroidNotificationPriority.HIGH,
       };
       
-      // Schedule the notification with Date trigger
-      const triggerObject: Notifications.DateTriggerInput = {
-        date: scheduledDate,
+      // Calculate seconds from now for more reliable scheduling
+      const secondsFromNow = Math.floor((scheduledDate.getTime() - Date.now()) / 1000);
+      
+      // Schedule the notification with seconds trigger
+      const triggerObject: Notifications.TimeIntervalTriggerInput = {
+        seconds: secondsFromNow,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('🔔 NOTIFICATION DEBUG - Trigger object:', {
-        date: scheduledDate.toISOString(),
-        dateTime: scheduledDate.getTime(),
+      console.log('🔔 NOTIFICATION DEBUG - Trigger object (seconds):', {
+        seconds: secondsFromNow,
+        scheduledDate: scheduledDate.toISOString(),
+        currentTime: new Date().toISOString(),
         repeats: false,
         platform: Platform.OS
       });
