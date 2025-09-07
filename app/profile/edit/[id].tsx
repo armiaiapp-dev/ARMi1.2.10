@@ -104,23 +104,8 @@ export default function EditProfile() {
       if (id) {
         const profileData = await DatabaseService.getProfileById(parseInt(id));
         if (profileData) {
-          setProfile({
-            ...profileData,
-            // Convert arrays back to text for editing
-            parentsText: profileData.parents?.join(', ') || '',
-            kidsText: profileData.kids?.join(', ') || '',
-            brothersText: profileData.brothers?.join(', ') || '',
-            sistersText: profileData.sisters?.join(', ') || '',
-            siblingsText: profileData.siblings?.join(', ') || '',
-            likesText: profileData.foodLikes?.join(', ') || '',
-            dislikesText: profileData.foodDislikes?.join(', ') || '',
-            interestsText: profileData.interests?.join(', ') || '',
-          });
-          
-          // Set selected image if profile has photo
-          if (profileData.photoUri) {
-            setSelectedImage({ uri: profileData.photoUri });
-          }
+          setProfile(profileData);
+          populateProfileData();
         }
       }
     } catch (error) {
@@ -140,6 +125,59 @@ export default function EditProfile() {
     try {
       const profileData = {
         ...profile,
+  const loadProfiles = async () => {
+    try {
+      const allProfiles = await DatabaseService.getAllProfiles();
+      setProfiles(allProfiles);
+    } catch (error) {
+      console.error('Error loading profiles:', error);
+    }
+  };
+
+  const populateProfileData = () => {
+    if (!profile) return;
+
+    setProfile({
+      ...profile,
+      // Convert arrays back to text for editing
+      parentsText: profile.parents?.join(', ') || '',
+      kidsText: profile.kids?.join(', ') || '',
+      brothersText: profile.brothers?.join(', ') || '',
+      sistersText: profile.sisters?.join(', ') || '',
+      siblingsText: profile.siblings?.join(', ') || '',
+      likesText: profile.foodLikes?.join(', ') || '',
+      dislikesText: profile.foodDislikes?.join(', ') || '',
+      interestsText: profile.interests?.join(', ') || '',
+    });
+    
+    // Set selected image if profile has photo
+    if (profile.photoUri) {
+      setSelectedImage({ uri: profile.photoUri });
+    }
+    
+    // Convert existing birthday to MM/DD/YYYY format if needed
+    if (profile.birthday) {
+      // If it's in ISO format, convert to MM/DD/YYYY
+      if (profile.birthday.includes('-') && profile.birthday.length > 8) {
+        try {
+          const date = new Date(profile.birthday);
+          if (!isNaN(date.getTime())) {
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const year = date.getFullYear();
+            const formattedBirthday = `${month}/${day}/${year}`;
+            updateField('birthday', formattedBirthday);
+            
+            // Calculate age for existing birthday
+            const calculatedAge = calculateAge(date);
+            updateField('age', calculatedAge);
+          }
+        } catch (error) {
+          console.error('Error converting birthday format:', error);
+        }
+      }
+    }
+  };
         id: parseInt(id),
       };
       
@@ -294,20 +332,35 @@ export default function EditProfile() {
   };
 
   const handleBirthdayInputChange = (text: string) => {
-    // Allow user to type freely, but don't validate until they have 10 characters
-    updateField('birthday', text);
+    // Remove all non-digit characters
+    const digitsOnly = text.replace(/\D/g, '');
+    
+    // Format with slashes as user types
+    let formatted = '';
+    if (digitsOnly.length >= 1) {
+      formatted = digitsOnly.substring(0, 2);
+    }
+    if (digitsOnly.length >= 3) {
+      formatted += '/' + digitsOnly.substring(2, 4);
+    }
+    if (digitsOnly.length >= 5) {
+      formatted += '/' + digitsOnly.substring(4, 8);
+    }
+    
+    // Update the birthday field with formatted text
+    updateField('birthday', formatted);
     
     // Clear age if input is incomplete
-    if (text.length < 10) {
+    if (formatted.length < 10) {
       updateField('age', null);
       return;
     }
     
-    // Only validate when they've entered exactly 10 characters (MM/DD/YYYY)
-    if (text.length === 10) {
+    // Only validate and calculate age when we have a complete date (MM/DD/YYYY)
+    if (formatted.length === 10) {
       const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
       
-      if (!dateRegex.test(text)) {
+      if (!dateRegex.test(formatted)) {
         Alert.alert(
           'Invalid Date Format',
           'Please use MM/DD/YYYY format (e.g., 03/15/1990)',
@@ -320,7 +373,7 @@ export default function EditProfile() {
       }
       
       // Parse the date
-      const [month, day, year] = text.split('/').map(num => parseInt(num));
+      const [month, day, year] = formatted.split('/').map(num => parseInt(num));
       const inputDate = new Date(year, month - 1, day);
       const today = new Date();
       today.setHours(23, 59, 59, 999); // End of today
@@ -369,26 +422,6 @@ export default function EditProfile() {
     return age;
   };
 
-  const formatBirthdayForDisplay = () => {
-    if (!profile.birthday) return '';
-    
-    // If it's already in MM/DD/YYYY format, return as is
-    if (profile.birthday.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      return profile.birthday;
-    }
-    
-    // If it's in ISO format, convert to MM/DD/YYYY
-    try {
-      const date = new Date(profile.birthday);
-      if (isNaN(date.getTime())) return profile.birthday; // Return raw input if invalid
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${month}/${day}/${year}`;
-    } catch {
-      return profile.birthday;
-    }
-  };
 
   if (loading) {
     return (
@@ -462,13 +495,18 @@ export default function EditProfile() {
             <Text style={[styles.label, { color: theme.text }]}>Birthday</Text>
             <TextInput
               style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
-              value={formatBirthdayForDisplay()}
+              value={profile.birthday}
               onChangeText={handleBirthdayInputChange}
               placeholder="MM/DD/YYYY (e.g., 03/15/1990)"
               placeholderTextColor={theme.primary}
               keyboardType="numeric"
               maxLength={10}
             />
+            {profile.age && (
+              <Text style={[styles.ageDisplay, { color: theme.primary }]}>
+                Age: {profile.age} years old
+              </Text>
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -1016,5 +1054,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  ageDisplay: {
+    fontSize: 14,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
