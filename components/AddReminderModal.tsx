@@ -137,7 +137,7 @@ export function AddReminderModal({ visible, onClose, onReminderAdded, theme }: A
         description: description.trim() || null,
         type: selectedType,
         profileId: selectedProfile,
-        scheduledFor: scheduledDateTime,
+        scheduledFor: scheduledDateTime, // Pass Date object directly
       };
 
       // Create the reminder in database

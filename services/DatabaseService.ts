@@ -601,8 +601,8 @@ class DatabaseServiceClass {
     }
     
     const { id, title, description, type, profileId, scheduledFor } = reminderData;
-    // Convert Date object to ISO string for database storage
-    const scheduledForISO = scheduledFor instanceof Date ? scheduledFor.toISOString() : scheduledFor;
+    // Convert Date object to ISO string for database storage only
+    const scheduledForISO = scheduledFor.toISOString();
     
     await this.db!.runAsync(`
       UPDATE reminders SET 

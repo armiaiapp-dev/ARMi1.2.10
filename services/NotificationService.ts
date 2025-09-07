@@ -394,7 +394,7 @@ class NotificationServiceClass {
       }
 
       // Use the Date object directly (no timezone conversion)
-      const scheduledDate = scheduledText.scheduledFor;
+      const scheduledDate = new Date(scheduledText.scheduledFor.getTime());
       const now = new Date();
 
       console.log('📱 TEXT NOTIFICATION DEBUG - Scheduling text notification for:', scheduledDate.toLocaleString());
@@ -410,7 +410,7 @@ class NotificationServiceClass {
 
       // Add buffer to ensure notification is scheduled far enough in the future
       const timeDifferenceMs = scheduledDate.getTime() - now.getTime();
-      const minimumBufferMs = 60000; // 60 seconds buffer
+      const minimumBufferMs = 15000; // 15 seconds buffer
       
       if (timeDifferenceMs < minimumBufferMs) {
         console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
@@ -438,19 +438,6 @@ class NotificationServiceClass {
       
       // Ensure we have a positive number of seconds
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
-      
-      // FINAL CHECK BEFORE SCHEDULING - Detailed logging
-      console.log('🔔 NOTIFICATION DEBUG - FINAL CHECK BEFORE SCHEDULING:');
-      console.log('  Scheduled Date (ISO):', scheduledDate.toISOString());
-      console.log('  Scheduled Date (Unix):', scheduledDate.getTime());
-      console.log('  Scheduled Date (Full String):', scheduledDate.toString());
-      console.log('  Current Date (ISO):', new Date().toISOString());
-      console.log('  Current Date (Unix):', new Date().getTime());
-      console.log('  Current Date (Full String):', new Date().toString());
-      console.log('  Time Difference (ms):', scheduledDate.getTime() - new Date().getTime());
-      console.log('  Time Difference (minutes):', (scheduledDate.getTime() - new Date().getTime()) / (1000 * 60));
-      console.log('  Device Timezone Offset (minutes):', new Date().getTimezoneOffset());
-      console.log('  Scheduled Date Timezone Offset (minutes):', scheduledDate.getTimezoneOffset());
       
       // Schedule the notification with date trigger for more explicit scheduling
       const triggerObject: Notifications.DateTriggerInput = {
@@ -512,7 +499,7 @@ class NotificationServiceClass {
       }
 
       // Use the Date object directly (no timezone conversion)
-      const scheduledDate = new Date(reminder.scheduledFor.getTime());
+      const scheduledDate = reminder.scheduledFor;
       const now = new Date();
 
       console.log('🔔 NOTIFICATION DEBUG - Scheduling notification for:', scheduledDate.toLocaleString());
@@ -544,7 +531,7 @@ class NotificationServiceClass {
 
       // Add buffer to ensure notification is scheduled far enough in the future
       const timeDifferenceMs = scheduledDate.getTime() - now.getTime();
-      const minimumBufferMs = 15000; // 15 seconds buffer
+      const minimumBufferMs = 60000; // 60 seconds buffer
       
       if (timeDifferenceMs < minimumBufferMs) {
         console.log(`🔔 NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
@@ -577,6 +564,19 @@ class NotificationServiceClass {
       
       // Ensure we have a positive number of seconds
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
+      
+      // FINAL CHECK BEFORE SCHEDULING - Detailed logging
+      console.log('🔔 NOTIFICATION DEBUG - FINAL CHECK BEFORE SCHEDULING:');
+      console.log('  Scheduled Date (ISO):', scheduledDate.toISOString());
+      console.log('  Scheduled Date (Unix):', scheduledDate.getTime());
+      console.log('  Scheduled Date (Full String):', scheduledDate.toString());
+      console.log('  Current Date (ISO):', new Date().toISOString());
+      console.log('  Current Date (Unix):', new Date().getTime());
+      console.log('  Current Date (Full String):', new Date().toString());
+      console.log('  Time Difference (ms):', scheduledDate.getTime() - new Date().getTime());
+      console.log('  Time Difference (minutes):', (scheduledDate.getTime() - new Date().getTime()) / (1000 * 60));
+      console.log('  Device Timezone Offset (minutes):', new Date().getTimezoneOffset());
+      console.log('  Scheduled Date Timezone Offset (minutes):', scheduledDate.getTimezoneOffset());
       
       // Schedule the notification with date trigger for more explicit scheduling
       const triggerObject: Notifications.DateTriggerInput = {
