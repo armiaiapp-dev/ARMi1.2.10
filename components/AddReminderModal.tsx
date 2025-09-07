@@ -196,37 +196,42 @@ export function AddReminderModal({ visible, onClose, onReminderAdded, theme }: A
 
   const setQuickDate = (days: number) => {
     const now = new Date();
-    const date = new Date();
+    let targetDate = new Date();
     
     if (days === 0) {
       // For "Today", always use today's date but set a reasonable future time
       const currentHour = now.getHours();
-      if (currentHour >= 22) {
-        // If it's already 10 PM or later, schedule for tomorrow at 9 AM
-        date.setDate(now.getDate() + 1);
+      
+      // Set to today's date explicitly
+      targetDate.setFullYear(now.getFullYear());
+      targetDate.setMonth(now.getMonth());
+      targetDate.setDate(now.getDate());
+      
+      if (currentHour >= 19) {
+        // If it's already 7 PM or later, schedule for tomorrow at 9 AM
+        targetDate.setDate(now.getDate() + 1);
         setScheduledTime('09:00');
         setSelectedAmPm('AM');
       } else {
-        // If it's before 10 PM, schedule for today at a reasonable future time
-        const suggestedHour = Math.max(currentHour + 1, 19); // At least 1 hour from now, or 7 PM
-        date.setDate(now.getDate()); // Explicitly set to today's date
+        // If it's before 7 PM, schedule for 7 PM today
+        const suggestedHour = 19; // 7 PM
         const displayHour = suggestedHour > 12 ? (suggestedHour - 12).toString().padStart(2, '0') : suggestedHour.toString().padStart(2, '0');
         setScheduledTime(`${displayHour}:00`);
         setSelectedAmPm(suggestedHour >= 12 ? 'PM' : 'AM');
       }
     } else {
       // For other quick dates, set to 12:00 PM
-      date.setDate(date.getDate() + days);
+      targetDate.setDate(now.getDate() + days);
       setScheduledTime('12:00');
       setSelectedAmPm('PM');
     }
     
     // Use local date components to avoid timezone issues
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const year = targetDate.getFullYear();
+    const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = targetDate.getDate().toString().padStart(2, '0');
     setScheduledDate(`${year}-${month}-${day}`);
-    setCalendarDate(date);
+    setCalendarDate(targetDate);
   };
 
   const getSelectedProfileName = () => {

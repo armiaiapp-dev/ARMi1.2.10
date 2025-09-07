@@ -393,7 +393,8 @@ class NotificationServiceClass {
         }
       }
 
-      const scheduledDate = scheduledText.scheduledFor;
+      // Create a copy of the scheduled date to avoid modifying the original
+      const scheduledDate = new Date(scheduledText.scheduledFor.getTime());
       const now = new Date();
 
       console.log('📱 TEXT NOTIFICATION DEBUG - Scheduling text notification for:', scheduledDate.toLocaleString());
@@ -410,7 +411,9 @@ class NotificationServiceClass {
       
       if (timeDifferenceMs < minimumBufferMs) {
         console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
-        scheduledDate.setTime(now.getTime() + minimumBufferMs);
+        // Create a new date object with the buffer instead of modifying in place
+        const bufferedDate = new Date(now.getTime() + minimumBufferMs);
+        scheduledDate.setTime(bufferedDate.getTime());
         console.log(`📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
       }
 
@@ -476,8 +479,8 @@ class NotificationServiceClass {
         }
       }
 
-      // Use the scheduled date directly and ensure it's in the future
-      const scheduledDate = reminder.scheduledFor;
+      // Create a copy of the scheduled date to avoid modifying the original
+      const scheduledDate = new Date(reminder.scheduledFor.getTime());
       const now = new Date();
 
       console.log('🔔 NOTIFICATION DEBUG - Scheduling notification for:', scheduledDate.toLocaleString());
@@ -510,7 +513,9 @@ class NotificationServiceClass {
       
       if (timeDifferenceMs < minimumBufferMs) {
         console.log(`🔔 NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
-        scheduledDate.setTime(now.getTime() + minimumBufferMs);
+        // Create a new date object with the buffer instead of modifying in place
+        const bufferedDate = new Date(now.getTime() + minimumBufferMs);
+        scheduledDate.setTime(bufferedDate.getTime());
         console.log(`🔔 NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
       } else {
         console.log(`🔔 NOTIFICATION DEBUG - Time difference sufficient (${timeDifferenceMs}ms), no buffer needed`);
