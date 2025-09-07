@@ -294,8 +294,14 @@ export default function EditProfile() {
   };
 
   const handleBirthdayInputChange = (text: string) => {
-    // Allow user to type freely
+    // Allow user to type freely, but don't validate until they have 10 characters
     updateField('birthday', text);
+    
+    // Clear age if input is incomplete
+    if (text.length < 10) {
+      updateField('age', null);
+      return;
+    }
     
     // Only validate when they've entered exactly 10 characters (MM/DD/YYYY)
     if (text.length === 10) {
@@ -305,7 +311,10 @@ export default function EditProfile() {
         Alert.alert(
           'Invalid Date Format',
           'Please use MM/DD/YYYY format (e.g., 03/15/1990)',
-          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+          [{ text: 'Okay', onPress: () => {
+            updateField('birthday', '');
+            updateField('age', null);
+          }}]
         );
         return;
       }
@@ -321,7 +330,10 @@ export default function EditProfile() {
         Alert.alert(
           'Invalid Date',
           'Please enter a valid date (e.g., 03/15/1990)',
-          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+          [{ text: 'Okay', onPress: () => {
+            updateField('birthday', '');
+            updateField('age', null);
+          }}]
         );
         return;
       }
@@ -331,11 +343,30 @@ export default function EditProfile() {
         Alert.alert(
           'Invalid Birthday',
           'Birthday cannot be in the future. Please enter a past date.',
-          [{ text: 'Okay', onPress: () => updateField('birthday', '') }]
+          [{ text: 'Okay', onPress: () => {
+            updateField('birthday', '');
+            updateField('age', null);
+          }}]
         );
         return;
       }
+      
+      // Calculate and set age
+      const calculatedAge = calculateAge(inputDate);
+      updateField('age', calculatedAge);
     }
+  };
+
+  const calculateAge = (birthDate: Date) => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
   };
 
   const formatBirthdayForDisplay = () => {
@@ -349,6 +380,7 @@ export default function EditProfile() {
     // If it's in ISO format, convert to MM/DD/YYYY
     try {
       const date = new Date(profile.birthday);
+      if (isNaN(date.getTime())) return profile.birthday; // Return raw input if invalid
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const day = date.getDate().toString().padStart(2, '0');
       const year = date.getFullYear();
@@ -423,18 +455,6 @@ export default function EditProfile() {
               onChangeText={(text) => updateField('name', text)}
               placeholder="Enter name"
               placeholderTextColor={theme.primary}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.text }]}>Age</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.accent, color: theme.text, borderColor: theme.border }]}
-              value={profile.age?.toString() || ''}
-              onChangeText={(text) => updateField('age', text ? parseInt(text) || null : null)}
-              placeholder="Enter age"
-              placeholderTextColor={theme.primary}
-              keyboardType="numeric"
             />
           </View>
 
