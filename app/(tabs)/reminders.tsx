@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Bell, Calendar, Clock, Filter, Plus } from 'lucide-react-native';
+import { TestTube } from 'lucide-react-native';
 import { ReminderCard } from '../../components/ReminderCard';
 import { FilterModal } from '../../components/FilterModal';
 import { AddReminderModal } from '../../components/AddReminderModal';
@@ -118,6 +119,54 @@ export default function RemindersScreen() {
     loadReminders(); // Refresh the list
   };
 
+  const handleTestNotification = async () => {
+    try {
+      const result = await NotificationService.testScheduleNotification(1); // Schedule for 1 minute from now
+      
+      if (!result) {
+        Alert.alert('Test Failed', 'Failed to initialize notification service');
+        return;
+      }
+
+      if (!result.success) {
+        Alert.alert('Test Failed', result.error || 'Unknown error occurred');
+        return;
+      }
+
+      const { diagnostics } = result;
+      
+      // Display diagnostic information in UI
+      const diagnosticMessage = `
+🧪 TEST NOTIFICATION SCHEDULED
+
+Current Time: ${diagnostics.currentTime}
+Target Time: ${diagnostics.targetTime}
+
+Time Difference: ${Math.round(diagnostics.deltaMinutes * 100) / 100} minutes
+
+Technical Details:
+• Current Unix: ${diagnostics.currentTimeUnix}
+• Target Unix: ${diagnostics.targetTimeUnix}
+• Delta (ms): ${diagnostics.deltaMs}
+• Valid Date: ${diagnostics.isValidDate}
+• Is Future: ${diagnostics.isInFuture}
+• Timezone Offset: ${diagnostics.timezoneOffset} min
+
+IMPORTANT: Close the app completely and wait 1 minute to see if the notification appears at the correct time.
+
+If it appears immediately after closing, we have a platform/config issue.
+If it appears exactly 1 minute later, the issue is in our date parsing logic.`;
+
+      Alert.alert(
+        'Test Notification Scheduled',
+        diagnosticMessage,
+        [{ text: 'OK - Will Test Now' }]
+      );
+    } catch (error) {
+      Alert.alert('Test Error', `Failed to schedule test notification: ${error.message}`);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -130,6 +179,12 @@ export default function RemindersScreen() {
             onPress={() => setAddReminderModalVisible(true)}
           >
             <Plus size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: colors.accent, borderColor: colors.border }]}
+            onPress={handleTestNotification}
+          >
+            <TestTube size={20} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.headerButton, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}

@@ -657,5 +657,100 @@ class NotificationServiceClass {
   }
 }
 
+  /**
+   * Schedules a simple test notification for a specified number of minutes in the future.
+   * This is for debugging purposes to isolate scheduling issues.
+   * @param delayMinutes The number of minutes from now to schedule the notification.
+   * @returns Object with notification ID and diagnostic info, or null.
+   */
+  async testScheduleNotification(delayMinutes: number) {
+    try {
+      if (!this.isInitialized) {
+        const initialized = await this.init();
+        if (!initialized) {
+          console.warn('Cannot schedule test notification - notifications not initialized');
+          return null;
+        }
+      }
+
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + delayMinutes * 60 * 1000);
+
+      // Diagnostic information that will be returned for UI display
+      const diagnostics = {
+        currentTime: now.toLocaleString(),
+        currentTimeISO: now.toISOString(),
+        currentTimeUnix: now.getTime(),
+        targetTime: futureDate.toLocaleString(),
+        targetTimeISO: futureDate.toISOString(),
+        targetTimeUnix: futureDate.getTime(),
+        deltaMs: futureDate.getTime() - now.getTime(),
+        deltaMinutes: (futureDate.getTime() - now.getTime()) / (1000 * 60),
+        isValidDate: !isNaN(futureDate.getTime()),
+        isInFuture: futureDate.getTime() > now.getTime(),
+        timezoneOffset: now.getTimezoneOffset(),
+      };
+
+      console.log('🧪 TEST NOTIFICATION DEBUG - Diagnostics:', diagnostics);
+
+      // Validate the date before scheduling
+      if (!diagnostics.isValidDate) {
+        console.error('🧪 TEST NOTIFICATION DEBUG - Invalid date generated');
+        return { diagnostics, error: 'Invalid date generated' };
+      }
+
+      if (!diagnostics.isInFuture) {
+        console.error('🧪 TEST NOTIFICATION DEBUG - Target time is not in the future');
+        return { diagnostics, error: 'Target time is not in the future' };
+      }
+
+      if (diagnostics.deltaMs < 30000) { // Less than 30 seconds
+        console.error('🧪 TEST NOTIFICATION DEBUG - Target time too close to current time');
+        return { diagnostics, error: 'Target time too close to current time (< 30 seconds)' };
+      }
+
+      const notificationContent: Notifications.NotificationContentInput = {
+        title: `🧪 Test Notification (${delayMinutes} min delay)`,
+        body: `Scheduled for ${futureDate.toLocaleString()}. Current: ${now.toLocaleString()}`,
+        data: {
+          type: 'test_notification',
+          delay: delayMinutes,
+          scheduledAt: now.toISOString(),
+          targetTime: futureDate.toISOString(),
+        },
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+      };
+
+      const triggerObject: Notifications.DateTriggerInput = {
+        date: futureDate,
+        repeats: false,
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      };
+
+      console.log('🧪 TEST NOTIFICATION DEBUG - About to schedule with trigger:', triggerObject);
+
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: notificationContent,
+        trigger: triggerObject,
+      });
+
+      console.log(`🧪 TEST NOTIFICATION DEBUG - Scheduled test notification ${notificationId}`);
+      
+      return {
+        notificationId,
+        diagnostics,
+        success: true
+      };
+    } catch (error) {
+      console.error('🧪 TEST NOTIFICATION DEBUG - Failed to schedule test notification:', error);
+      return {
+        diagnostics: null,
+        error: error.message || 'Unknown error',
+        success: false
+      };
+    }
+  }
+
 const NotificationService = new NotificationServiceClass();
 export default NotificationService;
