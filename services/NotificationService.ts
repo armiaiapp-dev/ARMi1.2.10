@@ -646,7 +646,9 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     }
 
     const now = new Date();
-    const futureDate = new Date(now.getTime() + delayMinutes * 60 * 1000);
+    // For testing, we'll use a fixed 10-second delay as per previous iterations.
+    // The `delayMinutes` parameter can still be used for diagnostics if needed.
+    const futureDate = new Date(now.getTime() + 10 * 1000); // Schedule for 10 seconds from now
 
     // Diagnostic information that will be returned for UI display
     const diagnostics = {
@@ -694,12 +696,17 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
-    const triggerSeconds: number = 10; // Test with a fixed 10-second delay
-    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger seconds being sent:', triggerSeconds);
+    // Use the recommended 'date' trigger type with the calculated futureDate
+    const triggerObject: Notifications.DateTriggerInput = {
+      date: futureDate,
+      repeats: false, // This is a one-time test notification
+      ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+    };
+    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
 
     notificationId = await Notifications.scheduleNotificationAsync({
       content: notificationContent,
-      trigger: triggerSeconds,
+      trigger: triggerObject,
     });
     
     return {
