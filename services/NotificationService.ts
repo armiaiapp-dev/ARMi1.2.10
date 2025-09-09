@@ -704,6 +704,7 @@ async function testScheduleNotification(delayMinutes: number) {
   } catch (error: any) {
     console.error('🧪 TEST NOTIFICATION DEBUG - Failed to schedule test notification:', error);
     return {
+      notificationId: null,
       diagnostics: null,
       error: error.message || 'Unknown error',
       success: false
