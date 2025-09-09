@@ -699,14 +699,6 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       date: futureDate,
       repeats: false,
       ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-    };
-    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
-      date: futureDate,
-      repeats: false, // This is a one-time test notification
-      ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-    };
-    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
-
     notificationId = await Notifications.scheduleNotificationAsync({
       content: notificationContent,
       trigger: triggerObject,
