@@ -741,7 +741,7 @@ class NotificationServiceClass {
         diagnostics,
         success: true
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('🧪 TEST NOTIFICATION DEBUG - Failed to schedule test notification:', error);
       return {
         diagnostics: null,
