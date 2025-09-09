@@ -700,6 +700,7 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     notificationId = await Notifications.scheduleNotificationAsync({
     }
       trigger: triggerSeconds,
+    )
     
     return {
       notificationId,
