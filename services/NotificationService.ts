@@ -556,16 +556,7 @@ class NotificationServiceClass {
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('🔔 NOTIFICATION DEBUG - Trigger object (date):', {
-        date: scheduledDate.toISOString(),
-        dateLocal: scheduledDate.toLocaleString(),
-        originalSeconds: secondsFromNow,
-        finalSecondsFromNow,
-        scheduledDate: scheduledDate.toISOString(),
-        currentTime: new Date().toISOString(),
-        repeats: false,
-        platform: Platform.OS
-      });
+      console.log('🔔 NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
       
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: notificationContent,
@@ -699,17 +690,8 @@ async function testScheduleNotification(delayMinutes: number) {
     };
 
     const triggerObject: Notifications.NotificationTriggerInput = {
-      seconds: delayMinutes * 60, // Schedule for X seconds from now
-      repeats: false,
-      ...(Platform.OS === 'android' && { channelId: 'reminders' }), // Android specific channel
-    };
-
-    console.log('🧪 TEST NOTIFICATION DEBUG - About to schedule with trigger:', triggerObject);
-
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: notificationContent,
-      trigger: triggerObject,
-    });
+      seconds: 10, // Test with a fixed 10-second delay
+    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
 
     console.log(`🧪 TEST NOTIFICATION DEBUG - Scheduled test notification ${notificationId}`);
     
