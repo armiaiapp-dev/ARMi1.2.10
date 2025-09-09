@@ -691,6 +691,7 @@ async function testScheduleNotification(delayMinutes: number) {
 
     const triggerObject: Notifications.NotificationTriggerInput = {
       seconds: 10, // Test with a fixed 10-second delay
+    }
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
 
     console.log(`🧪 TEST NOTIFICATION DEBUG - Scheduled test notification ${notificationId}`);
