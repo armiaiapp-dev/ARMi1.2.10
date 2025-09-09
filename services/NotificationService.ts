@@ -502,19 +502,10 @@ class NotificationServiceClass {
       const scheduledDate = reminder.scheduledFor;
       const now = new Date();
 
-      console.log('🔔 NOTIFICATION DEBUG - Scheduling notification for:', scheduledDate.toLocaleString());
-      console.log('🔔 NOTIFICATION DEBUG - Current time:', now.toLocaleString());
-      console.log('🔔 NOTIFICATION DEBUG - Input type:', typeof reminder.scheduledFor);
-      console.log('🔔 NOTIFICATION DEBUG - Input value:', reminder.scheduledFor);
-      console.log('🔔 NOTIFICATION DEBUG - Parsed date valid:', !isNaN(scheduledDate.getTime()));
-      console.log('🔔 NOTIFICATION DEBUG - Time difference (ms):', scheduledDate.getTime() - now.getTime());
-      console.log('🔔 NOTIFICATION DEBUG - Time difference (minutes):', (scheduledDate.getTime() - now.getTime()) / (1000 * 60));
-      
-      // Enhanced debugging
-      console.log('🔔 NOTIFICATION DEBUG - Scheduled Date ISO:', scheduledDate.toISOString());
-      console.log('🔔 NOTIFICATION DEBUG - Current Date ISO:', now.toISOString());
-      console.log('🔔 NOTIFICATION DEBUG - Scheduled Date Unix:', scheduledDate.getTime());
-      console.log('🔔 NOTIFICATION DEBUG - Current Date Unix:', now.getTime());
+      // Calculate seconds from now for more reliable scheduling
+      const timeDifferenceMs = scheduledDate.getTime() - now.getTime();
+      let secondsFromNow = Math.floor(timeDifferenceMs / 1000);
+
       console.log('🔔 NOTIFICATION DEBUG - Scheduled Date Local Components:', {
         year: scheduledDate.getFullYear(),
         month: scheduledDate.getMonth(),
@@ -524,28 +515,10 @@ class NotificationServiceClass {
         second: scheduledDate.getSeconds()
       });
       
-      if (scheduledDate <= now) {
+      if (secondsFromNow <= 0) {
         console.warn('🔔 NOTIFICATION DEBUG - Cannot schedule notification for past date:', scheduledDate.toLocaleString());
         return null;
       }
-
-      // Add buffer to ensure notification is scheduled far enough in the future
-      const timeDifferenceMs = scheduledDate.getTime() - now.getTime();
-      const minimumBufferMs = 60000; // 60 seconds buffer
-      
-      if (timeDifferenceMs < minimumBufferMs) {
-        console.log(`🔔 NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
-        scheduledDate.setTime(now.getTime() + minimumBufferMs);
-        console.log(`🔔 NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
-      } else {
-        console.log(`🔔 NOTIFICATION DEBUG - Time difference sufficient (${timeDifferenceMs}ms), no buffer needed`);
-      }
-
-      // Final pre-scheduling debug
-      const finalTimeDiff = scheduledDate.getTime() - Date.now();
-      console.log('🔔 NOTIFICATION DEBUG - FINAL: Trigger date', scheduledDate.toString());
-      console.log('🔔 NOTIFICATION DEBUG - FINAL: ms from now:', finalTimeDiff);
-      console.log('🔔 NOTIFICATION DEBUG - FINAL: minutes from now:', finalTimeDiff / (1000 * 60));
 
       // Create notification content
       const notificationContent: Notifications.NotificationContentInput = {
@@ -558,12 +531,10 @@ class NotificationServiceClass {
         sound: true,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       };
-      
-      // Calculate seconds from now for more reliable scheduling
-      const secondsFromNow = Math.floor((scheduledDate.getTime() - Date.now()) / 1000);
-      
+
       // Ensure we have a positive number of seconds
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
+      console.log('🔔 NOTIFICATION DEBUG - Final seconds from now:', finalSecondsFromNow);
       
       // FINAL CHECK BEFORE SCHEDULING - Detailed logging
       console.log('🔔 NOTIFICATION DEBUG - FINAL CHECK BEFORE SCHEDULING:');
@@ -579,8 +550,8 @@ class NotificationServiceClass {
       console.log('  Scheduled Date Timezone Offset (minutes):', scheduledDate.getTimezoneOffset());
       
       // Schedule the notification with date trigger for more explicit scheduling
-      const triggerObject: Notifications.DateTriggerInput = {
-        date: scheduledDate,
+      const triggerObject: Notifications.NotificationTriggerInput = {
+        seconds: finalSecondsFromNow,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
