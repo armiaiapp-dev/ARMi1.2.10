@@ -629,14 +629,19 @@ export default NotificationService;
  * @param delayMinutes The number of minutes from now to schedule the notification.
  * @returns Object with notification ID and diagnostic info, or null.
  */
-async function testScheduleNotification(delayMinutes: number) {
-  const service = new NotificationServiceClass(); // Create an instance to call init()
+async function testScheduleNotification(delayMinutes: number, service: NotificationServiceClass) {
+  let notificationId: string | null = null; // Explicitly declare and initialize
   try {
-    if (!service.isInitialized) {
+    if (!(service as any).isInitialized) {
       const initialized = await service.init();
       if (!initialized) {
         console.warn('Cannot schedule test notification - notifications not initialized');
-        return null;
+        return {
+          notificationId: null,
+          diagnostics: null,
+          error: 'Notifications not initialized',
+          success: false
+        };
       }
     }
 
@@ -691,10 +696,10 @@ async function testScheduleNotification(delayMinutes: number) {
 
     const triggerObject: Notifications.NotificationTriggerInput = {
       seconds: 10, // Test with a fixed 10-second delay
-    }
+    };
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
 
-    console.log(`🧪 TEST NOTIFICATION DEBUG - Scheduled test notification ${notificationId}`);
+    notificationId = await Notifications.scheduleNotificationAsync({
     
     return {
       notificationId,
@@ -705,11 +710,12 @@ async function testScheduleNotification(delayMinutes: number) {
     console.error('🧪 TEST NOTIFICATION DEBUG - Failed to schedule test notification:', error);
     return {
       notificationId: null,
-      diagnostics: null,
+      diagnostics: diagnostics || null,
       error: error.message || 'Unknown error',
       success: false
     };
   }
 }
 
-NotificationService.testScheduleNotification = testScheduleNotification;
+// Attach the test function to the singleton instance, passing the instance itself
+NotificationService.testScheduleNotification = (delayMinutes: number) => testScheduleNotification(delayMinutes, NotificationService);
