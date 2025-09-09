@@ -727,10 +727,10 @@ async function testScheduleNotification(delayMinutes: number) {
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
-    const triggerObject: Notifications.DateTriggerInput = {
-      date: futureDate,
+    const triggerObject: Notifications.NotificationTriggerInput = {
+      seconds: delayMinutes * 60, // Schedule for X seconds from now
       repeats: false,
-      ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      ...(Platform.OS === 'android' && { channelId: 'reminders' }), // Android specific channel
     };
 
     console.log('🧪 TEST NOTIFICATION DEBUG - About to schedule with trigger:', triggerObject);
