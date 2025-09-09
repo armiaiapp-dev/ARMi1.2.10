@@ -700,6 +700,8 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
 
     notificationId = await Notifications.scheduleNotificationAsync({
+    }
+    )
     
     return {
       notificationId,
