@@ -694,14 +694,12 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
-    const triggerObject: Notifications.NotificationTriggerInput = {
-      seconds: 10, // Test with a fixed 10-second delay
-    };
-    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
+    const triggerSeconds: number = 10; // Test with a fixed 10-second delay
+    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger seconds being sent:', triggerSeconds);
 
     notificationId = await Notifications.scheduleNotificationAsync({
     }
-    )
+      trigger: triggerSeconds,
     
     return {
       notificationId,
