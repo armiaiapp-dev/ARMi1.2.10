@@ -699,6 +699,7 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       date: futureDate,
       repeats: false,
       ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+    }
     notificationId = await Notifications.scheduleNotificationAsync({
       content: notificationContent,
       trigger: triggerObject,
