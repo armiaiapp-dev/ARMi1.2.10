@@ -25,12 +25,12 @@
     "NSCameraUsageDescription": "ARMi needs camera access so you can take a new profile picture.",
     "NSPhotoLibraryAddUsageDescription": "ARMi may save photos to your library if you choose to keep them."
   },
-  "buildNumber": "17"
+  "buildNumber": "19"
     },
 
     "android": {
   "package": "com.armi.app",
-  "versionCode": 17,
+  "versionCode": 19,
   "adaptiveIcon": {
     "foregroundImage": "./assets/images/icon.png",
     "backgroundColor": "#000000"
