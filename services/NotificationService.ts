@@ -4,12 +4,29 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configure how notifications are handled when the app is in the foreground
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
+  handleNotification: async (notification) => {
+    // If the notification has a trigger, it means it's a scheduled notification.
+    // We don't want to show it immediately if it's scheduled for the future.
+    // The native system will handle its display at the correct time.
+    if (notification.request.trigger) {
+      console.log('🔔 NOTIFICATION DEBUG - Scheduled notification received in foreground, suppressing immediate display.');
+      return {
+        shouldShowAlert: false, // Don't show banner/alert
+        shouldPlaySound: false, // Don't play sound
+        shouldSetBadge: false,  // Don't set badge
+      };
+    }
+
+    // For immediate notifications (e.g., push notifications that arrive while app is open),
+    // or if the trigger is null (meaning it's meant to be shown immediately),
+    // then show it as usual.
+    console.log('🔔 NOTIFICATION DEBUG - Immediate notification received in foreground, showing.');
+    return {
+      shouldShowAlert: true, // Show banner/alert
+      shouldPlaySound: true, // Play sound
+      shouldSetBadge: true,  // Set badge
+    };
+  },
 });
 
 // Random app engagement messages
