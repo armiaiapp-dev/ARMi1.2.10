@@ -5,24 +5,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Configure how notifications are handled when the app is in the foreground
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
-    // If the notification has a trigger, it means it's a scheduled notification.
-    // We don't want to show it immediately if it's scheduled for the future.
-    // The native system will handle its display at the correct time.
-    if (notification.request.trigger) {
+    // Check if this is a scheduled notification using our custom flag
+    // We can't rely on trigger object as it often appears as null in foreground
+    if (notification.request.content.data && notification.request.content.data.isScheduled) {
       console.log('🔔 NOTIFICATION DEBUG - Scheduled notification received in foreground, suppressing immediate display.');
       return {
-        shouldShowAlert: false, // Don't show banner/alert
+        shouldShowBanner: false, // Don't show banner
+        shouldShowList: false,   // Don't show in notification list
         shouldPlaySound: false, // Don't play sound
         shouldSetBadge: false,  // Don't set badge
       };
     }
 
     // For immediate notifications (e.g., push notifications that arrive while app is open),
-    // or if the trigger is null (meaning it's meant to be shown immediately),
+    // or if it's not explicitly marked as scheduled,
     // then show it as usual.
     console.log('🔔 NOTIFICATION DEBUG - Immediate notification received in foreground, showing.');
     return {
-      shouldShowAlert: true, // Show banner/alert
+      shouldShowBanner: true, // Show banner
+      shouldShowList: true,   // Show in notification list
       shouldPlaySound: true, // Play sound
       shouldSetBadge: true,  // Set badge
     };
@@ -704,6 +705,7 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       body: `Scheduled for ${futureDate.toLocaleString()}. Current: ${now.toLocaleString()}`,
       data: {
         type: 'test_notification',
+        isScheduled: true, // Custom flag to identify scheduled notifications
         delay: delayMinutes,
         scheduledAt: now.toISOString(),
         targetTime: futureDate.toISOString(),
