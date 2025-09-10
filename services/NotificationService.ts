@@ -695,12 +695,17 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     };
 
     // Use the recommended 'date' trigger type with the calculated futureDate
-    const triggerObject: Notifications.DateTriggerInput = {
-      date: futureDate,
+    const triggerObject: Notifications.TimeIntervalTriggerInput = {
+      seconds: delayMinutes * 60,
       repeats: false,
       ...(Platform.OS === 'android' && { channelId: 'reminders' }),
     }
-    notificationId = await Notifications.scheduleNotificationAsync({
+    
+    console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', {
+      ...triggerObject,
+      scheduledForTime: futureDate.toLocaleString(),
+      delaySeconds: delayMinutes * 60
+    });
       content: notificationContent,
       trigger: triggerObject,
     });
