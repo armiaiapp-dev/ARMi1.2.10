@@ -631,6 +631,7 @@ export default NotificationService;
  */
 async function testScheduleNotification(delayMinutes: number, service: NotificationServiceClass) {
   let notificationId: string | null = null; // Explicitly declare and initialize
+  let diagnostics: any = null; // Add diagnostics declaration
   try {
     if (!(service as any).isInitialized) {
       const initialized = await service.init();
@@ -649,7 +650,7 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     const futureDate = new Date(now.getTime() + delayMinutes * 60 * 1000);
 
     // Diagnostic information that will be returned for UI display
-    const diagnostics = {
+    diagnostics = {
       currentTime: now.toLocaleString(),
       currentTimeISO: now.toISOString(),
       currentTimeUnix: now.getTime(),
@@ -699,13 +700,15 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       seconds: delayMinutes * 60,
       repeats: false,
       ...(Platform.OS === 'android' && { channelId: 'reminders' }),
-    }
+    };
     
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', {
       ...triggerObject,
       scheduledForTime: futureDate.toLocaleString(),
       delaySeconds: delayMinutes * 60
     });
+    
+    notificationId = await Notifications.scheduleNotificationAsync({
       content: notificationContent,
       trigger: triggerObject,
     });
