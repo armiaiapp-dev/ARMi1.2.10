@@ -714,9 +714,9 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
-    // Use the recommended 'date' trigger type with the calculated futureDate
-    const triggerObject: Notifications.TimeIntervalTriggerInput = {
-      seconds: delayMinutes * 60,
+    // Use DateTriggerInput for more explicit scheduling
+    const triggerObject: Notifications.DateTriggerInput = {
+      date: futureDate,
       repeats: false,
       ...(Platform.OS === 'android' && { channelId: 'reminders' }),
     };
@@ -724,7 +724,8 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', {
       ...triggerObject,
       scheduledForTime: futureDate.toLocaleString(),
-      delaySeconds: delayMinutes * 60
+      delaySeconds: delayMinutes * 60,
+      triggerType: 'DateTriggerInput'
     });
     
     notificationId = await Notifications.scheduleNotificationAsync({
