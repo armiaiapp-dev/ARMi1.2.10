@@ -429,16 +429,6 @@ class NotificationServiceClass {
         return null;
       }
 
-      // Add buffer to ensure notification is scheduled far enough in the future
-      const timeDifferenceMs = scheduledDate.getTime() - now.getTime();
-      const minimumBufferMs = 15000; // 15 seconds buffer
-      
-      if (timeDifferenceMs < minimumBufferMs) {
-        console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
-        scheduledDate.setTime(now.getTime() + minimumBufferMs);
-        console.log(`📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
-      }
-
       // Create notification content
       const notificationContent: Notifications.NotificationContentInput = {
         title: `Time to text ${scheduledText.profileName || 'someone'}!`,
