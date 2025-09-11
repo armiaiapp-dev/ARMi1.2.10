@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     // Check if this is a scheduled notification using our custom flag
-    // We can't rely on trigger object as it often appears as null in foreground
+    // We can't rely on the trigger object as it often appears as null in foreground on iOS
     if (notification.request.content.data && notification.request.content.data.isScheduled) {
       console.log('🔔 NOTIFICATION DEBUG - Scheduled notification received in foreground, suppressing immediate display.');
       return {
@@ -14,6 +14,7 @@ Notifications.setNotificationHandler({
         shouldShowList: false,   // Don't show in notification list
         shouldPlaySound: false, // Don't play sound
         shouldSetBadge: false,  // Don't set badge
+        shouldShowAlert: false, // Explicitly set deprecated property for diagnostic purposes
       };
     }
 
@@ -277,6 +278,7 @@ class NotificationServiceClass {
           body: amMessage.body,
           data: {
             type: 'random_app_engagement',
+            isScheduled: true, // Add this flag
             slot: 'am',
           },
           sound: true,
@@ -284,7 +286,7 @@ class NotificationServiceClass {
         };
         
         const amTrigger = {
-          date: amTime,
+          seconds: Math.max(1, Math.floor((amTime.getTime() - new Date().getTime()) / 1000)), // Use seconds directly
           ...(Platform.OS === 'android' && { channelId: 'reminders' }),
         };
         
@@ -308,6 +310,7 @@ class NotificationServiceClass {
           body: pmMessage.body,
           data: {
             type: 'random_app_engagement',
+            isScheduled: true, // Add this flag
             slot: 'pm',
           },
           sound: true,
@@ -315,7 +318,7 @@ class NotificationServiceClass {
         };
         
         const pmTrigger = {
-          date: pmTime,
+          seconds: Math.max(1, Math.floor((pmTime.getTime() - new Date().getTime()) / 1000)), // Use seconds directly
           ...(Platform.OS === 'android' && { channelId: 'reminders' }),
         };
         
@@ -445,6 +448,7 @@ class NotificationServiceClass {
           phoneNumber: scheduledText.phoneNumber,
           message: scheduledText.message,
           type: 'scheduled_text',
+          isScheduled: true, // Add this flag
         },
         sound: true,
         priority: Notifications.AndroidNotificationPriority.HIGH,
@@ -452,14 +456,22 @@ class NotificationServiceClass {
       };
       
       // Calculate seconds from now for more reliable scheduling
+      let timeDifferenceMs = scheduledDate.getTime() - now.getTime();
+      const minimumBufferMs = 5000; // 5 seconds buffer
+      if (timeDifferenceMs < minimumBufferMs && timeDifferenceMs > 0) {
+        console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
+        scheduledDate.setTime(now.getTime() + minimumBufferMs);
+        console.log(`📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
+      }
+
+      // Calculate seconds from now for more reliable scheduling
       const secondsFromNow = Math.floor((scheduledDate.getTime() - Date.now()) / 1000);
-      
-      // Ensure we have a positive number of seconds
+
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
       
-      // Schedule the notification with date trigger for more explicit scheduling
-      const triggerObject: Notifications.DateTriggerInput = {
-        date: scheduledDate,
+      // Schedule the notification with time interval trigger
+      const triggerObject: Notifications.TimeIntervalTriggerInput = {
+        seconds: finalSecondsFromNow,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
@@ -545,6 +557,7 @@ class NotificationServiceClass {
         data: {
           reminderId: reminder.id,
           type: 'reminder',
+          isScheduled: true, // Add this flag
         },
         sound: true,
         priority: Notifications.AndroidNotificationPriority.HIGH,
@@ -567,8 +580,8 @@ class NotificationServiceClass {
       console.log('  Device Timezone Offset (minutes):', new Date().getTimezoneOffset());
       console.log('  Scheduled Date Timezone Offset (minutes):', scheduledDate.getTimezoneOffset());
       
-      // Schedule the notification with date trigger for more explicit scheduling
-      const triggerObject: Notifications.NotificationTriggerInput = {
+      // Schedule the notification with time interval trigger
+      const triggerObject: Notifications.TimeIntervalTriggerInput = {
         seconds: finalSecondsFromNow,
         repeats: false,
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
@@ -706,6 +719,7 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       data: {
         type: 'test_notification',
         isScheduled: true, // Custom flag to identify scheduled notifications
+        // Keep other data for diagnostics
         delay: delayMinutes,
         scheduledAt: now.toISOString(),
         targetTime: futureDate.toISOString(),
@@ -714,9 +728,9 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
-    // Use DateTriggerInput for more explicit scheduling
-    const triggerObject: Notifications.DateTriggerInput = {
-      date: futureDate,
+    // Use TimeIntervalTriggerInput for consistency
+    const triggerObject: Notifications.TimeIntervalTriggerInput = {
+      seconds: delayMinutes * 60,
       repeats: false,
       ...(Platform.OS === 'android' && { channelId: 'reminders' }),
     };
@@ -725,7 +739,7 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       ...triggerObject,
       scheduledForTime: futureDate.toLocaleString(),
       delaySeconds: delayMinutes * 60,
-      triggerType: 'DateTriggerInput'
+      triggerType: 'TimeIntervalTriggerInput'
     });
     
     notificationId = await Notifications.scheduleNotificationAsync({
