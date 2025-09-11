@@ -456,16 +456,16 @@ class NotificationServiceClass {
       };
       
       // Calculate seconds from now for more reliable scheduling
-      let timeDifferenceMs = scheduledDate.getTime() - now.getTime();
+      let currentDelayMs = scheduledDate.getTime() - now.getTime(); // Renamed variable
       const minimumBufferMs = 5000; // 5 seconds buffer
-      if (timeDifferenceMs < minimumBufferMs && timeDifferenceMs > 0) {
-        console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${timeDifferenceMs}ms), adding buffer`);
+      if (currentDelayMs < minimumBufferMs && currentDelayMs > 0) {
+        console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${currentDelayMs}ms), adding buffer`);
         scheduledDate.setTime(now.getTime() + minimumBufferMs);
         console.log(`📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
       }
 
       // Calculate seconds from now for more reliable scheduling
-      const secondsFromNow = Math.floor((scheduledDate.getTime() - Date.now()) / 1000);
+      const secondsFromNow = Math.floor((scheduledDate.getTime() - now.getTime()) / 1000); // Ensure correct calculation
 
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
       
