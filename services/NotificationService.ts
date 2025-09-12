@@ -838,6 +838,10 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     const scheduledNotification = allScheduled.find(n => n.request.identifier === notificationId);
     console.log('🧪 TEST NOTIFICATION DEBUG - Scheduled notification details from getAllScheduledNotificationsAsync:', JSON.stringify(scheduledNotification, null, 2));
 
+    return {
+      notificationId,
+      diagnostics,
+      success: true
     };
   } catch (error: any) {
     console.error('🧪 TEST NOTIFICATION DEBUG - Failed to schedule test notification:', error);
