@@ -286,7 +286,12 @@ class NotificationServiceClass {
         };
         
         const amTrigger = {
-          seconds: Math.max(1, Math.floor((amTime.getTime() - new Date().getTime()) / 1000)), // Use seconds directly
+          // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
+          ...(Platform.OS === 'ios'
+            ? { date: amTime, repeats: false }
+            : { seconds: Math.max(1, Math.floor((amTime.getTime() - new Date().getTime()) / 1000)), repeats: false }
+          ),
+          // channelId is Android-specific
           ...(Platform.OS === 'android' && { channelId: 'reminders' }),
         };
         
@@ -318,7 +323,12 @@ class NotificationServiceClass {
         };
         
         const pmTrigger = {
-          seconds: Math.max(1, Math.floor((pmTime.getTime() - new Date().getTime()) / 1000)), // Use seconds directly
+          // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
+          ...(Platform.OS === 'ios'
+            ? { date: pmTime, repeats: false }
+            : { seconds: Math.max(1, Math.floor((pmTime.getTime() - new Date().getTime()) / 1000)), repeats: false }
+          ),
+          // channelId is Android-specific
           ...(Platform.OS === 'android' && { channelId: 'reminders' }),
         };
         
@@ -460,10 +470,13 @@ class NotificationServiceClass {
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
       
       // Schedule the notification with time interval trigger
-      const triggerObject: Notifications.TimeIntervalTriggerInput = {
-        seconds: finalSecondsFromNow,
-        repeats: false,
-        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+      const triggerObject: Notifications.NotificationTriggerInput = {
+        // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
+        ...(Platform.OS === 'ios'
+          ? { date: scheduledDate, repeats: false }
+          : { seconds: finalSecondsFromNow, repeats: false }
+        ),
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }), // channelId is Android-specific
       };
       
       console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object (date):', {
@@ -570,10 +583,13 @@ class NotificationServiceClass {
       console.log('  Device Timezone Offset (minutes):', new Date().getTimezoneOffset());
       console.log('  Scheduled Date Timezone Offset (minutes):', scheduledDate.getTimezoneOffset());
       
-      // Schedule the notification with time interval trigger
-      const triggerObject: Notifications.TimeIntervalTriggerInput = {
-        seconds: finalSecondsFromNow,
-        repeats: false,
+      // Schedule the notification with appropriate trigger type
+      const triggerObject: Notifications.NotificationTriggerInput = {
+        // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
+        ...(Platform.OS === 'ios'
+          ? { date: scheduledDate, repeats: false }
+          : { seconds: finalSecondsFromNow, repeats: false }
+        ),
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
@@ -719,10 +735,13 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
     };
 
     // Use TimeIntervalTriggerInput for consistency
-    const triggerObject: Notifications.TimeIntervalTriggerInput = {
-      seconds: delayMinutes * 60,
-      repeats: false,
-      ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+    const triggerObject: Notifications.NotificationTriggerInput = {
+      // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
+      ...(Platform.OS === 'ios'
+        ? { date: futureDate, repeats: false }
+        : { seconds: delayMinutes * 60, repeats: false }
+      ),
+      ...(Platform.OS === 'android' && { channelId: 'reminders' }), // channelId is Android-specific
     };
     
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', {
