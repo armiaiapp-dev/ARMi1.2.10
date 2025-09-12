@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 // Configure how notifications are handled when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -101,6 +102,12 @@ class NotificationServiceClass {
 
       this.isInitialized = true;
       console.log('Notification service initialized successfully');
+      
+      // Check if running in Expo Go and warn about background behavior differences
+      if (Constants.appOwnership === 'expo') {
+        console.warn('⚠️ NOTIFICATION WARNING: Running in Expo Go. Background notification behavior may differ from standalone builds. For accurate testing, use a development build or TestFlight.');
+      }
+      
       return true;
     } catch (error) {
       console.error('Failed to initialize notifications:', error);
@@ -288,11 +295,10 @@ class NotificationServiceClass {
         const amTrigger = {
           // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
           ...(Platform.OS === 'ios'
-            ? { date: amTime, repeats: false }
+            ? { date: amTime.getTime(), repeats: false } // Use Unix timestamp for iOS
             : { seconds: Math.max(1, Math.floor((amTime.getTime() - new Date().getTime()) / 1000)), repeats: false }
           ),
-          // channelId is Android-specific
-          ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+          ...(Platform.OS === 'android' && { channelId: 'reminders' }), // channelId is Android-specific
         };
         
         const amNotificationId = await Notifications.scheduleNotificationAsync({
@@ -325,11 +331,10 @@ class NotificationServiceClass {
         const pmTrigger = {
           // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
           ...(Platform.OS === 'ios'
-            ? { date: pmTime, repeats: false }
+            ? { date: pmTime.getTime(), repeats: false } // Use Unix timestamp for iOS
             : { seconds: Math.max(1, Math.floor((pmTime.getTime() - new Date().getTime()) / 1000)), repeats: false }
           ),
-          // channelId is Android-specific
-          ...(Platform.OS === 'android' && { channelId: 'reminders' }),
+          ...(Platform.OS === 'android' && { channelId: 'reminders' }), // channelId is Android-specific
         };
         
         const pmNotificationId = await Notifications.scheduleNotificationAsync({
@@ -434,8 +439,32 @@ class NotificationServiceClass {
       console.log('📱 TEXT NOTIFICATION DEBUG - Input value:', scheduledText.scheduledFor);
       console.log('📱 TEXT NOTIFICATION DEBUG - Parsed date valid:', !isNaN(scheduledDate.getTime()));
       
-      if (scheduledDate <= now) {
-        console.warn('📱 TEXT NOTIFICATION DEBUG - Cannot schedule notification for past date:', scheduledDate.toLocaleString());
+      // Strict unit handling - ensure 5-second safety buffer
+      const minimumTime = now.getTime() + 5000; // 5 seconds from now
+      if (scheduledDate.getTime() <= minimumTime) {
+        console.warn('📱 TEXT NOTIFICATION DEBUG - Scheduled time too close or in past, adjusting:', {
+          original: scheduledDate.toLocaleString(),
+          originalUnix: scheduledDate.getTime(),
+          minimumUnix: minimumTime,
+          currentUnix: now.getTime()
+        });
+        scheduledDate.setTime(minimumTime);
+        console.log('📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to:', scheduledDate.toLocaleString());
+      }
+      
+      // Verbose logging before scheduling
+      console.log('📱 TEXT NOTIFICATION DEBUG - Final scheduling details:', {
+        scheduledDateISO: scheduledDate.toISOString(),
+        scheduledDateLocal: scheduledDate.toLocaleString(),
+        scheduledDateUnix: scheduledDate.getTime(),
+        currentTimeUnix: now.getTime(),
+        deltaMs: scheduledDate.getTime() - now.getTime(),
+        deltaMinutes: (scheduledDate.getTime() - now.getTime()) / (1000 * 60),
+        platform: Platform.OS
+      });
+      
+      if (scheduledDate.getTime() <= now.getTime()) {
+        console.warn('📱 TEXT NOTIFICATION DEBUG - Cannot schedule notification for past date after adjustment');
         return null;
       }
 
@@ -456,39 +485,19 @@ class NotificationServiceClass {
       };
       
       // Calculate seconds from now for more reliable scheduling
-      let currentDelayMs = scheduledDate.getTime() - now.getTime(); // Renamed variable
-      const minimumBufferMs = 5000; // 5 seconds buffer
-      if (currentDelayMs < minimumBufferMs && currentDelayMs > 0) {
-        console.log(`📱 TEXT NOTIFICATION DEBUG - Time difference too small (${currentDelayMs}ms), adding buffer`);
-        scheduledDate.setTime(now.getTime() + minimumBufferMs);
-        console.log(`📱 TEXT NOTIFICATION DEBUG - Adjusted scheduled time to: ${scheduledDate.toLocaleString()}`);
-      }
-
-      // Calculate seconds from now for more reliable scheduling
-      const secondsFromNow = Math.floor((scheduledDate.getTime() - now.getTime()) / 1000); // Ensure correct calculation
-
+      const secondsFromNow = Math.floor((scheduledDate.getTime() - now.getTime()) / 1000);
       const finalSecondsFromNow = Math.max(1, secondsFromNow);
       
       // Schedule the notification with time interval trigger
       const triggerObject: Notifications.NotificationTriggerInput = {
-        // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
         ...(Platform.OS === 'ios'
-          ? { date: scheduledDate, repeats: false }
+          ? { date: scheduledDate.getTime(), repeats: false } // Use Unix timestamp (ms) for iOS
           : { seconds: finalSecondsFromNow, repeats: false }
         ),
-        ...(Platform.OS === 'android' && { channelId: 'reminders' }), // channelId is Android-specific
+        ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('📱 TEXT NOTIFICATION DEBUG - Trigger object (date):', {
-        date: scheduledDate.toISOString(),
-        dateLocal: scheduledDate.toLocaleString(),
-        originalSeconds: secondsFromNow,
-        finalSecondsFromNow,
-        scheduledDate: scheduledDate.toISOString(),
-        currentTime: new Date().toISOString(),
-        repeats: false,
-        platform: Platform.OS
-      });
+      console.log('📱 TEXT NOTIFICATION DEBUG - Final trigger object:', triggerObject);
       
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: notificationContent,
@@ -496,6 +505,11 @@ class NotificationServiceClass {
       });
 
       console.log(`📱 TEXT NOTIFICATION DEBUG - Scheduled text notification ${notificationId} for text ${scheduledText.id} at ${scheduledDate.toLocaleString()}`);
+      
+      // Fetch and log the scheduled notification details for debugging
+      const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+      const scheduledNotification = allScheduled.find(n => n.request.identifier === notificationId);
+      console.log('📱 TEXT NOTIFICATION DEBUG - Scheduled notification details from getAllScheduledNotificationsAsync:', JSON.stringify(scheduledNotification, null, 2));
       
       return notificationId;
     } catch (error) {
@@ -583,17 +597,40 @@ class NotificationServiceClass {
       console.log('  Device Timezone Offset (minutes):', new Date().getTimezoneOffset());
       console.log('  Scheduled Date Timezone Offset (minutes):', scheduledDate.getTimezoneOffset());
       
+      // Strict unit handling - ensure 5-second safety buffer
+      const minimumTime = now.getTime() + 5000; // 5 seconds from now
+      if (scheduledDate.getTime() <= minimumTime) {
+        console.warn('🔔 NOTIFICATION DEBUG - Scheduled time too close or in past, adjusting:', {
+          original: scheduledDate.toLocaleString(),
+          originalUnix: scheduledDate.getTime(),
+          minimumUnix: minimumTime,
+          currentUnix: now.getTime()
+        });
+        scheduledDate.setTime(minimumTime);
+        console.log('🔔 NOTIFICATION DEBUG - Adjusted scheduled time to:', scheduledDate.toLocaleString());
+      }
+      
+      // Verbose logging before scheduling
+      console.log('🔔 NOTIFICATION DEBUG - Final scheduling details:', {
+        scheduledDateISO: scheduledDate.toISOString(),
+        scheduledDateLocal: scheduledDate.toLocaleString(),
+        scheduledDateUnix: scheduledDate.getTime(),
+        currentTimeUnix: now.getTime(),
+        deltaMs: scheduledDate.getTime() - now.getTime(),
+        deltaMinutes: (scheduledDate.getTime() - now.getTime()) / (1000 * 60),
+        platform: Platform.OS
+      });
+      
       // Schedule the notification with appropriate trigger type
       const triggerObject: Notifications.NotificationTriggerInput = {
-        // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
         ...(Platform.OS === 'ios'
-          ? { date: scheduledDate, repeats: false }
+          ? { date: scheduledDate.getTime(), repeats: false } // Use Unix timestamp (ms) for iOS
           : { seconds: finalSecondsFromNow, repeats: false }
         ),
         ...(Platform.OS === 'android' && { channelId: 'reminders' }),
       };
       
-      console.log('🔔 NOTIFICATION DEBUG - Final trigger object being sent:', triggerObject);
+      console.log('🔔 NOTIFICATION DEBUG - Final trigger object:', triggerObject);
       
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: notificationContent,
@@ -602,8 +639,12 @@ class NotificationServiceClass {
 
       console.log(`🔔 NOTIFICATION DEBUG - Scheduled notification ${notificationId} for reminder ${reminder.id} at ${scheduledDate.toLocaleString()}`);
       
-      // Check all scheduled notifications after scheduling
+      // Fetch and log the scheduled notification details for debugging
       const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+      const scheduledNotification = allScheduled.find(n => n.request.identifier === notificationId);
+      console.log('🔔 NOTIFICATION DEBUG - Scheduled notification details from getAllScheduledNotificationsAsync:', JSON.stringify(scheduledNotification, null, 2));
+      
+      // Check all scheduled notifications after scheduling
       console.log('🔔 NOTIFICATION DEBUG - Total scheduled notifications:', allScheduled.length);
       
       // Check for Expo Go limitation
@@ -719,6 +760,38 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       return { diagnostics, error: 'Target time too close to current time (< 30 seconds)' };
     }
 
+    // Strict unit handling - ensure 5-second safety buffer
+    const minimumTime = now.getTime() + 5000; // 5 seconds from now
+    if (futureDate.getTime() <= minimumTime) {
+      console.warn('🧪 TEST NOTIFICATION DEBUG - Target time too close, adjusting:', {
+        original: futureDate.toLocaleString(),
+        originalUnix: futureDate.getTime(),
+        minimumUnix: minimumTime,
+        currentUnix: now.getTime()
+      });
+      futureDate.setTime(minimumTime);
+      console.log('🧪 TEST NOTIFICATION DEBUG - Adjusted target time to:', futureDate.toLocaleString());
+      
+      // Update diagnostics with adjusted values
+      diagnostics.targetTime = futureDate.toLocaleString();
+      diagnostics.targetTimeISO = futureDate.toISOString();
+      diagnostics.targetTimeUnix = futureDate.getTime();
+      diagnostics.deltaMs = futureDate.getTime() - now.getTime();
+      diagnostics.deltaMinutes = diagnostics.deltaMs / (1000 * 60);
+    }
+
+    // Enhanced verbose logging before scheduling
+    console.log('🧪 TEST NOTIFICATION DEBUG - Final scheduling details:', {
+      scheduledDateISO: futureDate.toISOString(),
+      scheduledDateLocal: futureDate.toLocaleString(),
+      scheduledDateUnix: futureDate.getTime(),
+      currentTimeUnix: now.getTime(),
+      deltaMs: futureDate.getTime() - now.getTime(),
+      deltaMinutes: (futureDate.getTime() - now.getTime()) / (1000 * 60),
+      platform: Platform.OS,
+      isRelativeOffset: delayMinutes <= 60, // Consider anything <= 60 minutes as relative
+    });
+
     const notificationContent: Notifications.NotificationContentInput = {
       title: `🧪 Test Notification (${delayMinutes} min delay)`,
       body: `Scheduled for ${futureDate.toLocaleString()}. Current: ${now.toLocaleString()}`,
@@ -734,21 +807,25 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       priority: Notifications.AndroidNotificationPriority.HIGH,
     };
 
+    // Dual-mode trigger logic based on whether this is a relative offset or absolute date
+    const isRelativeOffset = delayMinutes <= 60; // Consider anything <= 60 minutes as relative
     // Use TimeIntervalTriggerInput for consistency
     const triggerObject: Notifications.NotificationTriggerInput = {
-      // Use DateTriggerInput for iOS, TimeIntervalTriggerInput for others
-      ...(Platform.OS === 'ios'
-        ? { date: futureDate, repeats: false }
-        : { seconds: delayMinutes * 60, repeats: false }
+      ...(isRelativeOffset
+        ? { seconds: delayMinutes * 60, repeats: false } // Use seconds for short-term relative offsets
+        : Platform.OS === 'ios'
+          ? { date: futureDate.getTime(), repeats: false } // Use Unix timestamp (ms) for iOS absolute dates
+          : { seconds: Math.floor((futureDate.getTime() - now.getTime()) / 1000), repeats: false } // Use calculated seconds for other platforms
       ),
-      ...(Platform.OS === 'android' && { channelId: 'reminders' }), // channelId is Android-specific
+      ...(Platform.OS === 'android' && { channelId: 'reminders' }),
     };
     
     console.log('🧪 TEST NOTIFICATION DEBUG - Final trigger object being sent:', {
       ...triggerObject,
       scheduledForTime: futureDate.toLocaleString(),
       delaySeconds: delayMinutes * 60,
-      triggerType: 'TimeIntervalTriggerInput'
+      triggerType: isRelativeOffset ? 'TimeIntervalTriggerInput' : (Platform.OS === 'ios' ? 'DateTriggerInput' : 'TimeIntervalTriggerInput'),
+      isRelativeOffset
     });
     
     notificationId = await Notifications.scheduleNotificationAsync({
@@ -756,10 +833,11 @@ async function testScheduleNotification(delayMinutes: number, service: Notificat
       trigger: triggerObject,
     });
     
-    return {
-      notificationId,
-      diagnostics,
-      success: true
+    // Fetch and log the scheduled notification details for debugging
+    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const scheduledNotification = allScheduled.find(n => n.request.identifier === notificationId);
+    console.log('🧪 TEST NOTIFICATION DEBUG - Scheduled notification details from getAllScheduledNotificationsAsync:', JSON.stringify(scheduledNotification, null, 2));
+
     };
   } catch (error: any) {
     console.error('🧪 TEST NOTIFICATION DEBUG - Failed to schedule test notification:', error);
